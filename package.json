@@ -1,0 +1,16 @@
+{
+	"name": "edu.envision.collabmodpackager",
+	"version": "6.0.3",
+	"displayName": "CollabXR Mod Packager",
+	"description": "This is tool for packaging assets and prefabs to be imported in to CollabXR",
+	"unity": "2022.3",
+	"documentationUrl": "https://envision-center.github.io/CollabXR-Documentation/modpackager.html",
+	"dependencies": {
+		"com.unity.nuget.newtonsoft-json": "3.2.1"
+	},
+	"author": {
+		"name": "Envision Center",
+		"email": "envision@purdue.edu",
+		"url": "https://envision.center/collabxr"
+	}
+}

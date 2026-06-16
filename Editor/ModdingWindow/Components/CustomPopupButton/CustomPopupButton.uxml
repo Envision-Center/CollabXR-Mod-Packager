@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement class="unity-base-field__input unity-base-popup-field__input unity-popup-field__input" style="padding-top: 1px; padding-bottom: 1px;">
+        <ui:Label class="unity-text-element unity-base-popup-field__text" />
+        <ui:VisualElement class="unity-base-popup-field__arrow" />
+    </ui:VisualElement>
+</ui:UXML>

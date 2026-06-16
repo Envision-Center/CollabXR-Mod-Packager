@@ -1,0 +1,5 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:Box style="flex-grow: 1; flex-direction: row; margin: 0px; padding: 0px; height: 23px; background-color: transparent;" name="button-container">
+        <ui:Button name="download-button" style="flex-grow: 1; margin-left: 0px; margin-right: 0px; margin-top: 1px; margin-bottom: 1px; padding: 0px; height: 19px;" />
+    </ui:Box>
+</ui:UXML>

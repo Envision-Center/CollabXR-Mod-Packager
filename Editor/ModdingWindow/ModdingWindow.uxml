@@ -1,0 +1,134 @@
+<ui:UXML xmlns:ecm="CollabXR.ModPackager" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <uie:Toolbar>
+        <uie:ToolbarButton style="flex-grow: 1; -unity-text-align: middle-center;" text="Repository Authentication" name="repo-auth-tab-button" />
+        <uie:ToolbarButton style="flex-grow: 1; -unity-text-align: middle-center;" text="Repository Manager" name="repo-manager-tab-button" />
+        <uie:ToolbarButton style="flex-grow: 1; -unity-text-align: middle-center;" text="Mod Builder" name="mod-builder-tab-button" />
+        <uie:ToolbarButton style="flex-grow: 1; -unity-text-align: middle-center;" text="Settings" name="settings-tab-button" />
+    </uie:Toolbar>
+    <ui:Box style="flex-grow: 1; flex-direction: column;" name="repo-auth-tab">
+        <ui:Box style="flex-grow: 0; flex-shrink: 0; flex-direction: column; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px; margin: 24px; margin-bottom: 0px; border-width: 1px; border-color: #1A1A1A;">
+            <ui:Box style="flex-grow: 0; flex-shrink: 0; flex-direction: column; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px; background-color: transparent;" name="load-repository-box">
+                <ui:Label style="margin-bottom: 8px;" tabindex="-1" text="No Mod Repository Loaded" parse-escape-sequences="true" display-tooltip-when-elided="true" name="active-repository"/>
+                <ui:Label style="margin-bottom: 8px;" tabindex="-1" text="Load a Mod Repository:" parse-escape-sequences="true" display-tooltip-when-elided="true"/>
+                <ui:Label style="margin-bottom: 8px; color: #ff0000;" tabindex="-1" text="Failed to load repository, please try again." parse-escape-sequences="true" display-tooltip-when-elided="true" name="repository-load-fail-message"/>
+                <ui:TextField style="margin-bottom: 8px;" label="Repository URL" parse-escape-sequences="true" display-tooltip-when-elided="true" name="repository-url-field"/>
+                <ui:Button text="Load" name="load-repository-button"/>
+                <ui:ProgressBar title="Loading..." value="100" name="load-repository-progress-bar"/>
+            </ui:Box>
+        </ui:Box>
+
+        <ui:Box style="flex-grow: 0; flex-shrink: 0; flex-direction: column; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px; margin: 24px; border-width: 1px; border-color: #1A1A1A;">
+            <ui:Box style="flex-grow: 0; flex-shrink: 0; flex-direction: column; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px; background-color: transparent;" name="sign-in-box">
+                <ui:Label style="margin-bottom: 8px;" tabindex="-1" text="Sign in to the Mod Repository:" parse-escape-sequences="true" display-tooltip-when-elided="true" name="sign-in-header"/>
+                <ui:Label style="margin-bottom: 8px; color: #ff0000;" tabindex="-1" text="Failed to sign in, please try again." parse-escape-sequences="true" display-tooltip-when-elided="true" name="sign-in-fail-message"/>
+                <ui:TextField label="Username" parse-escape-sequences="true" display-tooltip-when-elided="true" name="username-field"/>
+                <ui:TextField style="margin-bottom: 8px;" label="Password" parse-escape-sequences="true" display-tooltip-when-elided="true" name="password-field" password="true" />
+                <ui:Button text="Sign in" name="sign-in-button"/>
+                <ui:ProgressBar title="Signing in..." value="100" name="sign-in-progress-bar"/>
+            </ui:Box>
+            <ui:Box style="flex-grow: 0; flex-shrink: 0; flex-direction: column; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px; background-color: transparent;" name="mfa-challenge-box">
+                <ui:Label style="margin-bottom: 8px;" tabindex="-1" text="Please input the Two-Factor Authentication code sent to your device:" parse-escape-sequences="true" display-tooltip-when-elided="true"/>
+                <ui:TextField style="margin-bottom: 8px;" label="Code" parse-escape-sequences="true" display-tooltip-when-elided="true" name="mfa-code-field" />
+                <ui:Button text="Submit" name="submit-mfa-button"/>
+            </ui:Box>
+            <ui:Box style="flex-grow: 0; flex-shrink: 0; flex-direction: column; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px; background-color: transparent;" name="new-password-box">
+                <ui:Label style="margin-bottom: 8px;" tabindex="-1" text="Your password has expired, please enter a new one here:" parse-escape-sequences="true" display-tooltip-when-elided="true"/>
+                <ui:TextField style="margin-bottom: 8px;" label="New Password" parse-escape-sequences="true" display-tooltip-when-elided="true" name="new-password-field" password="true" />
+                <ui:Button text="Submit" name="new-password-button"/>
+            </ui:Box>
+            <ui:Box style="flex-grow: 0; flex-shrink: 0; flex-direction: column; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px; background-color: transparent;" name="sign-out-box">
+                <ui:Label style="margin-bottom: 8px;" tabindex="-1" text="Signed in to the Mod Repository" parse-escape-sequences="true" display-tooltip-when-elided="true" name="sign-out-header" />
+                <ui:Button text="Sign Out" name="sign-out-button"/>
+            </ui:Box>
+        </ui:Box>
+    </ui:Box>
+    <ui:Box style="flex-grow: 1; flex-direction: column;" name="repo-manager-tab">
+        <ui:Box style="align-items: center; width: 100%; flex-direction: row; flex-grow: 0; flex-shrink: 0;">
+            <ui:Label style="flex-grow: 1; flex-shrink: 0; margin: 0px; padding: 0px; margin-left: 4px; margin-right: 4px;" tabindex="-1" text="No Mod Repository Loaded" parse-escape-sequences="true" display-tooltip-when-elided="true" name="manage-repo-title" />
+            <ui:Button style="flex-grow: 0; flex-shrink: 0;" text="Reload Repository" name="manage-repo-reload-button"/>
+            <ui:ProgressBar style="min-width: 150px;" title="Indexing..." value="100" name="repository-index-progress-bar"/>
+        </ui:Box>
+
+        <ui:Box style="align-self: stretch; align-items: stretch; align-content: stretch; flex-grow: 1; flex-direction: column; padding-top: 4px; border-left-width: 0px; border-right-width: 0px; background-color: transparent; border-top-width: 1px; border-top-color: #1A1A1A; border-bottom-width: 0px; border-bottom-color: #1A1A1A;">
+            <ui:Box style="width: 100%; flex-direction: row; flex-grow: 0; flex-shrink: 0; padding-bottom: 4px; background-color: transparent; ">
+                <ui:Label style="margin: 0px; padding: 0px; align-self: center; margin-left: 4px; margin-right: 4px;" tabindex="-1" text="Mods" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+                <uie:ToolbarSearchField label="Mods" style="margin: 0px; margin-left: 4px; margin-right: 4px; flex-grow: 1; flex-shrink: 0;" name="mods-search"/>
+            </ui:Box>
+            <ui:ScrollView name="mods-scrollview"/>
+        </ui:Box>
+    </ui:Box>
+    <ui:Box style="flex-grow: 1; flex-direction: column;" name="mod-builder-tab">
+        <ui:Box style="width: 100%; flex-direction: row; flex-grow: 0; flex-shrink: 0;">
+            <ui:DropdownField style="flex-grow: 1; flex-shrink: 0;" label="Target AssetBundle" name="target-assetbundle" />
+            <ui:Button style="flex-grow: 0; flex-shrink: 0;" text="Reload AssetBundle" name="target-assetbundle-reload-button"/>
+            <ui:ProgressBar style="min-width: 150px;" title="Reloading..." value="100" name="assetbundle-reload-progress-bar"/>
+        </ui:Box>
+
+        <ui:Box style="flex-grow: 0; flex-shrink: 0; flex-direction: column; padding-top: 12px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;" name="mod-config-box">
+            <ui:Label style="margin-bottom: 8px;" tabindex="-1" text="Mod Metadata:" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+
+            <ui:TextField label="Name" parse-escape-sequences="true" display-tooltip-when-elided="true" name="mod-name-field" />
+            <ui:TextField label="Owner" parse-escape-sequences="true" display-tooltip-when-elided="true" name="mod-owner-field" />
+
+            <ui:Box style="flex-direction: row; align-items: center;">
+                <ui:TextField label="Attribution" parse-escape-sequences="true" display-tooltip-when-elided="true" name="mod-attribution-field" style="flex-grow: 1;" tooltip="Modify attribution for every object in bundle" />
+
+                <ui:DropdownField name="mod-preset-attributions" style="width: 80px; height: 20px" />
+            </ui:Box>
+
+            <ui:ListView virtualization-method="DynamicHeight" reorder-mode="Animated" show-add-remove-footer="false" show-bound-collection-size="false" show-border="true" show-foldout-header="true" header-title="Versions" name="mod-versions-list" />
+            <ui:ListView virtualization-method="DynamicHeight" reorder-mode="Animated" show-add-remove-footer="true" show-bound-collection-size="true" show-border="true" show-foldout-header="true" header-title="Creators" name="mod-creators-list" />
+            <ui:TextField label="UUID" parse-escape-sequences="true" display-tooltip-when-elided="true" name="mod-uuid-field" readonly="true" />
+        </ui:Box>
+
+        <ui:Box style="align-self: stretch; align-items: stretch; align-content: stretch; flex-grow: 1; flex-direction: column; padding-top: 4px; border-left-width: 0px; border-right-width: 0px; background-color: transparent; border-top-width: 1px; border-top-color: #1A1A1A; border-bottom-width: 1px; border-bottom-color: #1A1A1A;">
+            <ui:Box style="width: 100%; flex-direction: row; flex-grow: 0; flex-shrink: 0; padding-bottom: 4px; background-color: transparent; ">
+                <ui:Label style="margin: 0px; padding: 0px; align-self: center; margin-left: 4px; margin-right: 4px;" tabindex="-1" text="Assets" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+                <uie:ToolbarSearchField label="Assets" style="margin: 0px; margin-left: 4px; margin-right: 4px; flex-grow: 1; flex-shrink: 0;" name="asset-search"/>
+                <uie:MaskField style="flex-grow: 1; flex-shrink: 0; margin: 0px; margin-left: 4px; margin-right: 4px;" name="asset-filter" />
+            </ui:Box>
+            <ui:ScrollView name="assets-scrollview"/>
+        </ui:Box>
+
+        <ui:Box style="flex-grow: 0; flex-shrink: 0; flex-direction: column; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px; border-bottom-width: 1px; border-bottom-color: #1A1A1A;" name="upload-queue">
+            <ui:Box style="flex-grow: 0; flex-shrink: 0; flex-direction: row; justify-content: space-between; background-color: transparent;">
+                <ui:Label style="margin-bottom: 8px;" tabindex="-1" text="Uploads" parse-escape-sequences="true" display-tooltip-when-elided="true"/>
+                <ui:Button style="width: 14px; height: 13px; color: #EEEEEE; background-color: transparent; background-image: url('./uploads_close.png'); border-bottom-width: 0px; border-left-width: 0px; border-top-width: 0px; border-right-width: 0px;" name="close-uploads"/>
+            </ui:Box>
+            <ui:ScrollView name="uploads-scrollview"/>
+        </ui:Box>
+
+        <ui:Box style="flex-grow: 0; flex-shrink: 0; flex-direction: column; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;" name="build-box">
+            <ui:Label style="margin-bottom: 8px;" tabindex="-1" text="Please sign in to publish mods" parse-escape-sequences="true" display-tooltip-when-elided="true"/>
+            <ui:Box style="flex-grow: 0; flex-shrink: 0; flex-direction: row; background-color: transparent; margin: 0px; padding: 0px; border-width: 0px;">
+                <ecm:CustomPopupButton style="flex-grow: 1; flex-shrink: 0; max-width: 200px;" text="No Targets Selected" name="build-selector" />
+                <ui:Button style="flex-grow: 1; flex-shrink: 0;" text="Build Offline" name="build" />
+            </ui:Box>
+        </ui:Box>
+        <ui:Box style="flex-grow: 0; flex-shrink: 0; flex-direction: column; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;" name="build-publish-box">
+            <ui:Box style="flex-grow: 0; flex-shrink: 0; flex-direction: row; background-color: transparent; margin: 0px; padding: 0px; border-width: 0px;">
+                <ecm:CustomPopupButton style="flex-grow: 1; flex-shrink: 0; max-width: 200px;" text="No Targets Selected" name="build-publish-selector" />
+                <ui:Button style="flex-grow: 1; flex-shrink: 0;" text="Build and Publish" name="build-publish" />
+            </ui:Box>
+        </ui:Box>
+    </ui:Box>
+    <ui:Box style="flex-grow: 1; flex-direction: column;" name="settings-tab">
+        <ui:Box style="flex-grow: 0; flex-shrink: 0; flex-direction: column; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px; margin: 24px; margin-bottom: 0px; border-width: 1px; border-color: #1A1A1A;" name="settings-box">
+            <ui:Box style="flex-grow: 0; flex-shrink: 0; flex-direction: column; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px; background-color: transparent;">
+                <ui:Label style="margin-bottom: 8px;" tabindex="-1" text="Settings" parse-escape-sequences="true" display-tooltip-when-elided="true"/>
+                <ui:Toggle label="Verbose Logging" name="verbose-logging" />
+            </ui:Box>
+        </ui:Box>
+    </ui:Box>
+    <ui:Box name="corruption-detected-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; flex-direction: column; align-items: center; align-content: center; justify-content: center;">
+        <ui:Box style="background-color: #333333; flex-grow: 0; flex-shrink: 0; flex-direction: column; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
+            <ui:Label style="max-width: 100%; margin-bottom: 8px; color: #ff0000;" tabindex="-1" text="Warning:" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+            <ui:Label style="max-width: 100%; margin-bottom: 8px; color: #ff0000;" tabindex="-1" text="Corruption inside your Project Database was found and it was unable to load" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+            <ui:Label style="max-width: 100%; margin-bottom: 8px; color: #ff0000;" tabindex="-1" text="If you manually correct the Project Database in the editor, you can click Try Again to reload it, otherwise, you can click Re-Create to erase your Project Database and start from scratch." parse-escape-sequences="true" display-tooltip-when-elided="true" />
+            <ui:Label style="max-width: 100%; margin-bottom: 8px; color: #ff0000;" tabindex="-1" text="If before you re-create Project Database, it is recommended that you make a backup." parse-escape-sequences="true" display-tooltip-when-elided="true" />
+
+            <ui:Button text="Try Again" name="try-again" />
+            <ui:Button text="Re-Create" name="recreate" />
+        </ui:Box>
+    </ui:Box>
+</ui:UXML>

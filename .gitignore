@@ -86,3 +86,7 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 /Editor/External/AWS/Extensions/obj/
+
+# Ignore .meta files for repository info
+README.rst.meta
+LICENSE.meta

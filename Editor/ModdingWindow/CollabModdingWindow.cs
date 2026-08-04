@@ -1541,131 +1541,7 @@ namespace CollabXR.ModPackager
 			{
 				QueuedActions.Add(() =>
 				{
-					///
-					/// STEP 4A:
-					/// Setup asset element UI
-					/// --------------------------------------------------------------------------------
-					
-					
-					string assetPath = modMetadataRef.AssetMap[assetUuid];
-					var newListElement = new AssetListPrefabElement(
-						assetUuid,
-						assetPath,
-						modExtraDataRef.ExtraAssetSettings[assetUuid.ToString()],
-						modMetadataRef.PrefabMap.ContainsKey(assetUuid)
-							? modMetadataRef.PrefabMap[assetUuid]
-							: null,
-						modExtraDataRef.ExtraPrefabSettings.ContainsKey(assetUuid.ToString())
-							? modExtraDataRef.ExtraPrefabSettings[assetUuid.ToString()]
-							: null
-					); // inside AssetListPrefabElement constructor is the UI setup
-
-
-					///
-					/// STEP 4B:
-					/// Setup callbacks for asset element UI
-					/// --------------------------------------------------------------------------------
-
-
-					newListElement.OnExtraAssetSettingsChanged += (newExtraAssetSettings) =>
-					{
-						modExtraDataRef.ExtraAssetSettings[assetUuid.ToString()] = newExtraAssetSettings;
-					};
-					newListElement.OnPrefabDataChanged += (newPrefabData) =>
-					{
-						if (newPrefabData != null)
-						{
-							if (modMetadataRef.PrefabMap.ContainsKey(assetUuid))
-							{
-								modMetadataRef.PrefabMap[assetUuid] = newPrefabData;
-							}
-							else
-							{
-								modMetadataRef.PrefabMap.Add(assetUuid, newPrefabData);
-							}
-						}
-						else
-						{
-							modMetadataRef.PrefabMap.Remove(assetUuid);
-						}
-					};
-					newListElement.OnExtraPrefabSettingsChanged += (newExtraPrefabSettings) =>
-					{
-						if (newExtraPrefabSettings != null)
-						{
-							if (modExtraDataRef.ExtraPrefabSettings.ContainsKey(assetUuid.ToString()))
-							{
-								modExtraDataRef.ExtraPrefabSettings[assetUuid.ToString()] = newExtraPrefabSettings;
-							}
-							else
-							{
-								modExtraDataRef.ExtraPrefabSettings.Add(assetUuid.ToString(), newExtraPrefabSettings);
-							}
-						}
-						else
-						{
-							modExtraDataRef.ExtraPrefabSettings.Remove(assetUuid.ToString());
-						}
-					};
-
-
-					///
-					/// STEP 4C:
-					/// Setup search, filter, and attribution callbacks for asset element UI
-					/// --------------------------------------------------------------------------------
-
-
-					/// TYPE LIST
-					string assetType = AssetDatabase.GetMainAssetTypeAtPath(assetPath).ToString();
-					assetTypeList.Add(assetType);
-
-					ModPrefab prefabData = modMetadataRef.PrefabMap.ContainsKey(assetUuid)
-						? modMetadataRef.PrefabMap[assetUuid]
-						: null;
-
-					// SEARCH
-					EventCallback<ChangeEvent<string>> searchCallback = (ChangeEvent<string> changeEvent) =>
-					{
-						string newValue = changeEvent.newValue;
-						QueuedActions.Add(() =>
-						{
-							SetVisible(newListElement, AssetFilterCheck(newValue, GenerateAssetSearchIndex(assetPath, assetUuid, prefabData), assetFilterField.value, assetType));
-						});
-					};
-					assetSearchChangedCallbacks.Add(searchCallback);
-					assetSearchField.RegisterCallback(searchCallback);
-
-					// FILTER
-					EventCallback<ChangeEvent<int>> filterCallback = (ChangeEvent<int> changeEvent) =>
-					{
-						int newValue = changeEvent.newValue;
-						QueuedActions.Add(() =>
-						{
-							SetVisible(newListElement, AssetFilterCheck(assetSearchField.value, GenerateAssetSearchIndex(assetPath, assetUuid, prefabData), newValue, assetType));
-						});
-					};
-					assetFilterChangedCallbacks.Add(filterCallback);
-
-					// ATTRIBUTION
-					EventCallback<ChangeEvent<string>> attributeCallback = (ChangeEvent<string> changeEvent) =>
-					{
-						string newValue = changeEvent.newValue;
-						TextField attributionField = newListElement.Q<TextField>("menu-object-attribution-field");
-						attributionField.value = newValue;
-					};
-					assetAttributionChangedCallback.Add(attributeCallback);
-					modAttributionField.RegisterCallback(attributeCallback);
-
-
-					///
-					/// STEP 4D:
-					/// Add the asset element to the scrollview and update progress
-					/// --------------------------------------------------------------------------------
-
-
-					assetsScrollview.Add(newListElement);
-					actionsDone++;
-					OnAssetBundleLoadProgress((int)Math.Floor(actionsDone / totalActions * 100));
+					ReloadAssetBundleModAssetUI(modMetadataRef, modExtraDataRef, assetUuid, ref actionsDone, totalActions);
 				});
 			}
 
@@ -1687,6 +1563,140 @@ namespace CollabXR.ModPackager
 
 				OnAssetBundleLoadProgress(100);
 			});
+		}
+
+		
+
+		void ReloadAssetBundleModAssetUI(
+			ModMetadata modMetadataRef,
+			ModEditorData modExtraDataRef,
+			Guid assetUuid,
+			ref float actionsDone,
+			float totalActions)
+		{
+			///
+			/// STEP 4A:
+			/// Setup asset element UI
+			/// --------------------------------------------------------------------------------
+			
+			string assetPath = modMetadataRef.AssetMap[assetUuid];
+			ExtraAssetSettings extraAssetSettings = modExtraDataRef.ExtraAssetSettings[assetUuid.ToString()];
+			ModPrefab prefabData = modMetadataRef.PrefabMap.ContainsKey(assetUuid)
+				? modMetadataRef.PrefabMap[assetUuid]
+				: null;
+			ExtraPrefabSettings extraPrefabSettings = modExtraDataRef.ExtraPrefabSettings.ContainsKey(assetUuid.ToString())
+				? modExtraDataRef.ExtraPrefabSettings[assetUuid.ToString()]
+				: null;
+			
+			var newListElement = new AssetListPrefabElement(
+				assetUuid,
+				assetPath,
+				extraAssetSettings,
+				prefabData,
+				extraPrefabSettings
+			); // inside AssetListPrefabElement constructor is the UI setup
+
+			///
+			/// STEP 4B:
+			/// Setup callbacks for asset element UI
+			/// --------------------------------------------------------------------------------
+
+
+			newListElement.OnExtraAssetSettingsChanged += (newExtraAssetSettings) =>
+			{
+				modExtraDataRef.ExtraAssetSettings[assetUuid.ToString()] = newExtraAssetSettings;
+			};
+			newListElement.OnPrefabDataChanged += (newPrefabData) =>
+			{
+				if (newPrefabData != null)
+				{
+					if (modMetadataRef.PrefabMap.ContainsKey(assetUuid))
+					{
+						modMetadataRef.PrefabMap[assetUuid] = newPrefabData;
+					}
+					else
+					{
+						modMetadataRef.PrefabMap.Add(assetUuid, newPrefabData);
+					}
+				}
+				else
+				{
+					modMetadataRef.PrefabMap.Remove(assetUuid);
+				}
+			};
+			newListElement.OnExtraPrefabSettingsChanged += (newExtraPrefabSettings) =>
+			{
+				if (newExtraPrefabSettings != null)
+				{
+					if (modExtraDataRef.ExtraPrefabSettings.ContainsKey(assetUuid.ToString()))
+					{
+						modExtraDataRef.ExtraPrefabSettings[assetUuid.ToString()] = newExtraPrefabSettings;
+					}
+					else
+					{
+						modExtraDataRef.ExtraPrefabSettings.Add(assetUuid.ToString(), newExtraPrefabSettings);
+					}
+				}
+				else
+				{
+					modExtraDataRef.ExtraPrefabSettings.Remove(assetUuid.ToString());
+				}
+			};
+
+
+			///
+			/// STEP 4C:
+			/// Setup search, filter, and attribution callbacks for asset element UI
+			/// --------------------------------------------------------------------------------
+
+
+			/// TYPE LIST
+			string assetType = AssetDatabase.GetMainAssetTypeAtPath(assetPath).ToString();
+			assetTypeList.Add(assetType);
+
+			// SEARCH
+			EventCallback<ChangeEvent<string>> searchCallback = (ChangeEvent<string> changeEvent) =>
+			{
+				string newValue = changeEvent.newValue;
+				QueuedActions.Add(() =>
+				{
+					SetVisible(newListElement, AssetFilterCheck(newValue, GenerateAssetSearchIndex(assetPath, assetUuid, prefabData), assetFilterField.value, assetType));
+				});
+			};
+			assetSearchChangedCallbacks.Add(searchCallback);
+			assetSearchField.RegisterCallback(searchCallback);
+
+			// FILTER
+			EventCallback<ChangeEvent<int>> filterCallback = (ChangeEvent<int> changeEvent) =>
+			{
+				int newValue = changeEvent.newValue;
+				QueuedActions.Add(() =>
+				{
+					SetVisible(newListElement, AssetFilterCheck(assetSearchField.value, GenerateAssetSearchIndex(assetPath, assetUuid, prefabData), newValue, assetType));
+				});
+			};
+			assetFilterChangedCallbacks.Add(filterCallback);
+
+			// ATTRIBUTION
+			EventCallback<ChangeEvent<string>> attributeCallback = (ChangeEvent<string> changeEvent) =>
+			{
+				string newValue = changeEvent.newValue;
+				TextField attributionField = newListElement.Q<TextField>("menu-object-attribution-field");
+				attributionField.value = newValue;
+			};
+			assetAttributionChangedCallback.Add(attributeCallback);
+			modAttributionField.RegisterCallback(attributeCallback);
+
+
+			///
+			/// STEP 4D:
+			/// Add the asset element to the scrollview and update progress
+			/// --------------------------------------------------------------------------------
+
+
+			assetsScrollview.Add(newListElement);
+			actionsDone++;
+			OnAssetBundleLoadProgress((int)Math.Floor(actionsDone / totalActions * 100));
 		}
 
 		bool AssetFilterCheck(string query, string searchIndex, int mask, string assetType)

@@ -31,6 +31,36 @@ namespace CollabXR.ModPackager
 			AssetPostProcessListener.OnAssetPostProcessEvent += AssetPostProcessCallback;
 		}
 
+		///
+		/// ACCESSOR METHODS
+		/// 
+
+		public ModMetadata TryGetModMetadata(string assetBundleName)
+		{
+			if (ProjectDatabase == null || IsCorrupt)
+				return null;
+
+			if (ProjectDatabase.AssetbundleToModMap.TryGetValue(assetBundleName, out ModMetadata mod))
+			{
+				return mod;
+			}
+
+			return null;
+		}
+		public ModEditorData TryGetModEditorData(string assetBundleName)
+		{
+			if (ProjectDatabase == null || IsCorrupt)
+				return null;
+
+			if (ProjectDatabase.AssetbundleToExtraDataMap.TryGetValue(assetBundleName, out ModEditorData modSettings))
+			{
+				return modSettings;
+			}
+
+			return null;
+		}
+
+
 		/// <summary>
 		/// If the Project Database does not exist or is corrupt,
 		/// this attempts to reload it from disk, and returns false.

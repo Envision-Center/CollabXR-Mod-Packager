@@ -9,7 +9,7 @@ using UnityEngine.UIElements;
 namespace CollabXR.ModPackager
 {
 	[UxmlElement]
-	public partial class AssetListElement : VisualElement
+	public partial class AssetListPrefabElement : VisualElement
 	{
 		public static readonly List<string> PresetAttributions = new() // list of commonly used attributions for ease of access
 		{
@@ -203,12 +203,12 @@ namespace CollabXR.ModPackager
 			});
 		}
 
-		public AssetListElement() { }
+		public AssetListPrefabElement() { }
 
-		public AssetListElement(Guid newAssetUuid, string newAssetPath, ExtraAssetSettings newExtraAssetSettings, ModPrefab newPrefabData, ExtraPrefabSettings newExtraPrefabSettings)
+		public AssetListPrefabElement(Guid newAssetUuid, string newAssetPath, ExtraAssetSettings newExtraAssetSettings, ModPrefab newPrefabData, ExtraPrefabSettings newExtraPrefabSettings)
 		{
 			VisualTreeAsset visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(
-				$"Packages/{CollabModdingWindow.BundleID}/Editor/ModdingWindow/Components/AssetListElement/AssetListElement.uxml"
+				$"Packages/{CollabModdingWindow.BundleID}/Editor/ModdingWindow/Components/AssetListPrefabElement/AssetListPrefabElement.uxml"
 			);
 			visualTreeAsset.CloneTree(this);
 

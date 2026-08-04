@@ -1360,8 +1360,8 @@ namespace CollabXR.ModPackager
 			modOwnerField.RegisterCallback(modOwnerFieldChangeEvent);
 
 			// TYPE OF ATTRIBUTION (DROPDOWN)
-			modPresetAttributions.choices = AssetListElement.PresetAttributions;
-			modPresetAttributions.value = AssetListElement.PresetAttributions[0];
+			modPresetAttributions.choices = AssetListPrefabElement.PresetAttributions;
+			modPresetAttributions.value = AssetListPrefabElement.PresetAttributions[0];
 			if (modPresetAttributionChangeEvent != null)
 				modPresetAttributions.UnregisterCallback(modPresetAttributionChangeEvent);
 			modPresetAttributionChangeEvent = (evt) =>
@@ -1526,7 +1526,7 @@ namespace CollabXR.ModPackager
 					
 					
 					string assetPath = projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].AssetMap[assetUuid];
-					var newListElement = new AssetListElement(
+					var newListElement = new AssetListPrefabElement(
 						assetUuid,
 						assetPath,
 						projectDatabaseManager.ProjectDatabase.AssetbundleToExtraDataMap[assetbundle].ExtraAssetSettings[assetUuid.ToString()],
@@ -1536,7 +1536,7 @@ namespace CollabXR.ModPackager
 						projectDatabaseManager.ProjectDatabase.AssetbundleToExtraDataMap[assetbundle].ExtraPrefabSettings.ContainsKey(assetUuid.ToString())
 							? projectDatabaseManager.ProjectDatabase.AssetbundleToExtraDataMap[assetbundle].ExtraPrefabSettings[assetUuid.ToString()]
 							: null
-					); // inside AssetListElement constructor is the UI setup
+					); // inside AssetListPrefabElement constructor is the UI setup
 
 
 					///

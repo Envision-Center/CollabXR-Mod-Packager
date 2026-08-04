@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <Style src="AssetListElement.uss" /> 
+    <Style src="AssetListPrefabElement.uss" /> 
     <ui:Box style="flex-direction: column; flex-grow: 1; margin: 0px; border-top-width: 1px; border-top-color: #1A1A1A; background-color: transparent;">
         <ui:Box style="flex-direction: row; flex-grow: 1; background-color: transparent;">
             <ui:Image name="asset-preview" style="height: 72px; width: 72px; margin-top: 4px; margin-right: 4px; margin-bottom: 4px; margin-left: 4px; background-color: transparent;" />

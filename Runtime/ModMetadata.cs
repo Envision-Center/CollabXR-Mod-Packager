@@ -21,6 +21,7 @@ namespace CollabXR.ModPackager
 
 		public Dictionary<Guid, string> AssetMap;
 		public Dictionary<Guid, ModPrefab> PrefabMap;
+		public Dictionary<Guid, ModScene> SceneMap;
 
 		public string LatestTestedVersion;
 	}
@@ -42,6 +43,23 @@ namespace CollabXR.ModPackager
 		public Texture2D Thumbnail = null;
 
 		// Want additional metadata? You can add it! Just ask Hazel!
+	}
+
+	public class ModScene // For Scenes
+	{
+		[UnityEngine.Scripting.Preserve]
+		public ModScene() { }
+
+		public string FormattedName = "";
+		public string Attribution = "";
+		
+		/// <summary>
+		/// Name -> Global Scene Position mapping for teleportation points. 
+		/// </summary>
+		public Dictionary<string, Vector3> teleports = new Dictionary<string, Vector3>();
+
+		[JsonConverter(typeof(Texture2DConverter))]
+		public Texture2D Thumbnail = null;
 	}
 
 	public class Texture2DConverter : JsonConverter<Texture2D>

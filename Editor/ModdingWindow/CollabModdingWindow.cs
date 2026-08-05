@@ -1565,8 +1565,10 @@ namespace CollabXR.ModPackager
 			});
 		}
 
-		
 
+		/// <summary>
+		/// Reloads the UI for a single asset in the asset bundle, setting up its element in the scrollview and registering callbacks for changes.
+		/// </summary>
 		void ReloadAssetBundleModAssetUI(
 			ModMetadata modMetadataRef,
 			ModEditorData modExtraDataRef,
@@ -1587,7 +1589,7 @@ namespace CollabXR.ModPackager
 			ExtraPrefabSettings extraPrefabSettings = modExtraDataRef.ExtraPrefabSettings.ContainsKey(assetUuid.ToString())
 				? modExtraDataRef.ExtraPrefabSettings[assetUuid.ToString()]
 				: null;
-			
+
 			var newListElement = new AssetListPrefabElement(
 				assetUuid,
 				assetPath,

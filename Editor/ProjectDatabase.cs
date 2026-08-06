@@ -54,7 +54,15 @@ namespace CollabXR.ModPackager
 	/// This is a class so it can be passed by reference.
 	/// </summary>
 	[Serializable]
-	public class ExtraSceneSettings { }
+	public class ExtraSceneSettings
+	{
+		/// <summary>
+		/// Mandatory thumbnail texture for the Scene.
+		/// This must be uncompressed in order to serialize!
+		/// </summary>
+		[SerializeField]
+		public Texture2D Texture = null;
+	}
 
 	/// <summary>
 	/// Serialized database of mods within the Unity project.

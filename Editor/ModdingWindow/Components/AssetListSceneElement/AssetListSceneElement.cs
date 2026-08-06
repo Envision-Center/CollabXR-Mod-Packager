@@ -25,6 +25,7 @@ namespace CollabXR.ModPackager
 		private Toggle menuObjectToggle;
 		private Box menuObjectSettings;
 
+		private TextField menuObjectCategoryField;
 		private TextField menuObjectFormattedNameField;
 
 		private TextField menuObjectAttributionField;
@@ -57,6 +58,15 @@ namespace CollabXR.ModPackager
 			set
 			{
 				assetPath = value;
+
+				CollabModdingWindow.QueuedActions.Add(() =>
+				{
+					assetTitle.text = $"<b>{Path.GetFileName(assetPath)}</b> ({assetPath})";
+					assetPreview.image = extraSceneSettings?.Texture != null 
+						? extraSceneSettings.Texture 
+						: AssetPreview.GetAssetPreview(AssetDatabase.LoadAssetAtPath<SceneAsset>(assetPath));
+					MarkDirtyRepaint();
+				});
 			}
 		}
 		private string assetPath;
@@ -134,17 +144,16 @@ namespace CollabXR.ModPackager
 		{
 			CollabModdingWindow.QueuedActions.Add(() =>
 			{
-				if (AssetDatabase.GetMainAssetTypeAtPath(assetPath) == typeof(GameObject))
+				if (AssetDatabase.GetMainAssetTypeAtPath(assetPath) == typeof(SceneAsset))
 				{
 					bool isScene = sceneData != null && extraSceneSettings != null;
-
-					SetVisible(menuObjectToggle, true);
-					menuObjectToggle.SetValueWithoutNotify(isScene);
+					Logger.Info($"Updating scene UI for {assetPath}. Is scene: {isScene}");
 
 					SetVisible(menuObjectSettings, isScene);
 
 					if (isScene)
 					{
+						menuObjectCategoryField.SetValueWithoutNotify(sceneData.Category);
 						menuObjectFormattedNameField.SetValueWithoutNotify(sceneData.FormattedName);
 						menuObjectAttributionField.SetValueWithoutNotify(sceneData.Attribution);
 						menuObjectAttributionPreset.choices = PresetAttributions;
@@ -166,7 +175,6 @@ namespace CollabXR.ModPackager
 				}
 				else
 				{
-					SetVisible(menuObjectToggle, false);
 					SetVisible(menuObjectSettings, false);
 				}
 
@@ -188,10 +196,11 @@ namespace CollabXR.ModPackager
 			assetTitle = this.Q<Label>("asset-title");
 			assetUuidField = this.Q<TextField>("asset-uuid");
 			assetPreview = this.Q<Image>("asset-preview");
-
 			menuObjectToggle = this.Q<Toggle>("asset-menu-object");
+
 			menuObjectSettings = this.Q<Box>("menu-object-settings");
 
+			menuObjectCategoryField = this.Q<TextField>("menu-object-category");
 			menuObjectFormattedNameField = this.Q<TextField>("menu-object-formatted-name");
 
 			menuObjectAttributionField = this.Q<TextField>("menu-object-attribution-field");
@@ -208,6 +217,8 @@ namespace CollabXR.ModPackager
 
 			SceneData = newSceneData;
 			ExtraSceneSettings = newExtraSceneSettings;
+
+			Logger.Info($"AssetListSceneElement created for {assetPath} with UUID {assetUuid}. Is scene: {sceneData != null && extraSceneSettings != null}");
 
 			menuObjectToggle.RegisterCallback<ChangeEvent<bool>>(
 				(changeEvent) =>
@@ -240,6 +251,18 @@ namespace CollabXR.ModPackager
 						OnSceneDataChanged?.Invoke(sceneData);
 					if (updatedExtraSceneSettings)
 						OnExtraSceneSettingsChanged?.Invoke(extraSceneSettings);
+				}
+			);
+
+			menuObjectCategoryField.RegisterCallback<ChangeEvent<string>>(
+				(changeEvent) =>
+				{
+					if (sceneData != null)
+					{
+						sceneData.Category = changeEvent.newValue;
+
+						OnSceneDataChanged?.Invoke(sceneData);
+					}
 				}
 			);
 

@@ -50,6 +50,7 @@ namespace CollabXR.ModPackager
 		[UnityEngine.Scripting.Preserve]
 		public ModScene() { }
 
+		public string Category = "";
 		public string FormattedName = "";
 		public string Attribution = "";
 		

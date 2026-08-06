@@ -18,7 +18,7 @@ namespace CollabXR.ModPackager
 		public SerializableDictionary<string, ExtraPrefabSettings> ExtraPrefabSettings = new();
 
 		[SerializeField]
-		public SerializableDictionary<string, ExtraAssetSettings> ExtraSceneSettings = new();
+		public SerializableDictionary<string, ExtraSceneSettings> ExtraSceneSettings = new();
 	}
 
 	/// <summary>

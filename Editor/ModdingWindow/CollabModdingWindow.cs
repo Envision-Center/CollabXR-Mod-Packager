@@ -1541,6 +1541,7 @@ namespace CollabXR.ModPackager
 			{
 				QueuedActions.Add(() =>
 				{
+					Logger.Info($"Reloading asset UI for {assetUuid} in asset bundle {assetbundle}");
 					ReloadAssetBundleModAssetUI(modMetadataRef, modExtraDataRef, assetUuid, ref actionsDone, totalActions);
 				});
 			}
@@ -1583,14 +1584,35 @@ namespace CollabXR.ModPackager
 			
 			string assetPath = modMetadataRef.AssetMap[assetUuid];
 			ExtraAssetSettings extraAssetSettings = modExtraDataRef.ExtraAssetSettings[assetUuid.ToString()];
+
+			// pull all refs required to setup the asset list visual element
 			ModPrefab prefabData = modMetadataRef.PrefabMap.ContainsKey(assetUuid)
 				? modMetadataRef.PrefabMap[assetUuid]
 				: null;
+			ModScene sceneData = modMetadataRef.SceneMap.ContainsKey(assetUuid)
+				? modMetadataRef.SceneMap[assetUuid]
+				: null;			
 			ExtraPrefabSettings extraPrefabSettings = modExtraDataRef.ExtraPrefabSettings.ContainsKey(assetUuid.ToString())
 				? modExtraDataRef.ExtraPrefabSettings[assetUuid.ToString()]
 				: null;
+			ExtraSceneSettings extraSceneSettings = modExtraDataRef.ExtraSceneSettings.ContainsKey(assetUuid.ToString())
+				? modExtraDataRef.ExtraSceneSettings[assetUuid.ToString()]
+				: null;
 
-			var newListElement = new AssetListPrefabElement(
+			bool isScene = IsAssetScene(assetPath);
+			Logger.Info($"Reloading asset UI for {assetUuid} in asset bundle {modMetadataRef.Uuid}. Asset path: {assetPath}. Is scene: {isScene}");
+
+			// create the asset list element
+			VisualElement newListElement = 
+			isScene
+			? new AssetListSceneElement(
+				assetUuid,
+				assetPath,
+				extraAssetSettings,
+				sceneData,
+				extraSceneSettings
+			) // inside AssetListSceneElement constructor is the UI setup
+			: new AssetListPrefabElement(
 				assetUuid,
 				assetPath,
 				extraAssetSettings,
@@ -1603,48 +1625,96 @@ namespace CollabXR.ModPackager
 			/// Setup callbacks for asset element UI
 			/// --------------------------------------------------------------------------------
 
-
-			newListElement.OnExtraAssetSettingsChanged += (newExtraAssetSettings) =>
+			// basically does the same operation for both scenes and prefabs
+			if (isScene)
 			{
-				modExtraDataRef.ExtraAssetSettings[assetUuid.ToString()] = newExtraAssetSettings;
-			};
-			newListElement.OnPrefabDataChanged += (newPrefabData) =>
-			{
-				if (newPrefabData != null)
+				AssetListSceneElement newSceneListElement = newListElement as AssetListSceneElement;
+				newSceneListElement.OnExtraAssetSettingsChanged += (newExtraAssetSettings) =>
 				{
-					if (modMetadataRef.PrefabMap.ContainsKey(assetUuid))
+					modExtraDataRef.ExtraAssetSettings[assetUuid.ToString()] = newExtraAssetSettings;
+				};
+				newSceneListElement.OnSceneDataChanged += (newSceneData) =>
+				{
+					if (newSceneData != null)
 					{
-						modMetadataRef.PrefabMap[assetUuid] = newPrefabData;
+						if (modMetadataRef.SceneMap.ContainsKey(assetUuid))
+						{
+							modMetadataRef.SceneMap[assetUuid] = newSceneData;
+						}
+						else
+						{
+							modMetadataRef.SceneMap.Add(assetUuid, newSceneData);
+						}
 					}
 					else
 					{
-						modMetadataRef.PrefabMap.Add(assetUuid, newPrefabData);
+						modMetadataRef.SceneMap.Remove(assetUuid);
 					}
-				}
-				else
+				};
+				newSceneListElement.OnExtraSceneSettingsChanged += (newExtraSceneSettings) =>
 				{
-					modMetadataRef.PrefabMap.Remove(assetUuid);
-				}
-			};
-			newListElement.OnExtraPrefabSettingsChanged += (newExtraPrefabSettings) =>
-			{
-				if (newExtraPrefabSettings != null)
-				{
-					if (modExtraDataRef.ExtraPrefabSettings.ContainsKey(assetUuid.ToString()))
+					if (newExtraSceneSettings != null)
 					{
-						modExtraDataRef.ExtraPrefabSettings[assetUuid.ToString()] = newExtraPrefabSettings;
+						if (modExtraDataRef.ExtraSceneSettings.ContainsKey(assetUuid.ToString()))
+						{
+							modExtraDataRef.ExtraSceneSettings[assetUuid.ToString()] = newExtraSceneSettings;
+						}
+						else
+						{
+							modExtraDataRef.ExtraSceneSettings.Add(assetUuid.ToString(), newExtraSceneSettings);
+						}
 					}
 					else
 					{
-						modExtraDataRef.ExtraPrefabSettings.Add(assetUuid.ToString(), newExtraPrefabSettings);
+						modExtraDataRef.ExtraSceneSettings.Remove(assetUuid.ToString());
 					}
-				}
-				else
+				};
+			}
+			else
+			{
+				AssetListPrefabElement newPrefabListElement = newListElement as AssetListPrefabElement;
+				newPrefabListElement.OnExtraAssetSettingsChanged += (newExtraAssetSettings) =>
 				{
-					modExtraDataRef.ExtraPrefabSettings.Remove(assetUuid.ToString());
-				}
-			};
-
+					modExtraDataRef.ExtraAssetSettings[assetUuid.ToString()] = newExtraAssetSettings;
+				};
+				newPrefabListElement.OnPrefabDataChanged += (newPrefabData) =>
+				{
+					if (newPrefabData != null)
+					{
+						if (modMetadataRef.PrefabMap.ContainsKey(assetUuid))
+						{
+							modMetadataRef.PrefabMap[assetUuid] = newPrefabData;
+						}
+						else
+						{
+							modMetadataRef.PrefabMap.Add(assetUuid, newPrefabData);
+						}
+					}
+					else
+					{
+						modMetadataRef.PrefabMap.Remove(assetUuid);
+					}
+				};
+				newPrefabListElement.OnExtraPrefabSettingsChanged += (newExtraPrefabSettings) =>
+				{
+					if (newExtraPrefabSettings != null)
+					{
+						if (modExtraDataRef.ExtraPrefabSettings.ContainsKey(assetUuid.ToString()))
+						{
+							modExtraDataRef.ExtraPrefabSettings[assetUuid.ToString()] = newExtraPrefabSettings;
+						}
+						else
+						{
+							modExtraDataRef.ExtraPrefabSettings.Add(assetUuid.ToString(), newExtraPrefabSettings);
+						}
+					}
+					else
+					{
+						modExtraDataRef.ExtraPrefabSettings.Remove(assetUuid.ToString());
+					}
+				};
+			}
+			
 
 			///
 			/// STEP 4C:
@@ -1920,6 +1990,11 @@ namespace CollabXR.ModPackager
 			buildTargetSelector.onTargetsUpdated += buildTargetSelectorAction;
 			buildButton.clicked += buildButtonAction;
 			buildPublishButton.clicked += buildPublishButtonAction;
+		}
+
+		private bool IsAssetScene(string assetPath)
+		{
+			return assetPath.EndsWith(".unity");
 		}
 	}
 }

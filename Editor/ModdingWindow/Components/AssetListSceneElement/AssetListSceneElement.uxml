@@ -23,7 +23,6 @@
             </ui:Box>
 
             <ui:Label tabindex="-1" text="Thumbnail" parse-escape-sequences="true" display-tooltip-when-elided="true" style="margin: 3px; margin-top: 9px;" />
-            <ui:Toggle label="Auto Generate" name="menu-object-thumbnail-auto-generate" style="margin-bottom: 1px;" />
             <uie:ObjectField type="UnityEngine.Texture2D, UnityEngine.CoreModule" label="Select" name="menu-object-thumbnail-select" />
             <ui:HelpBox text='Your Thumbnail import settings are incorrect! Please use the "Default" Texture Type and enable Read/Write under the Advanced dropdown' parse-escape-sequences="true" message-type="Error" name="thumbnail-import-error">
                 <ui:Button style="flex-grow: 1; flex-shrink: 0;" text="Auto Fix" name="autofix-thumbnail-import"/>

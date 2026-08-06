@@ -149,6 +149,9 @@ namespace CollabXR.ModPackager
 					bool isScene = sceneData != null && extraSceneSettings != null;
 					Logger.Info($"Updating scene UI for {assetPath}. Is scene: {isScene}");
 
+					SetVisible(menuObjectToggle, true);
+					menuObjectToggle.SetValueWithoutNotify(isScene);
+
 					SetVisible(menuObjectSettings, isScene);
 
 					if (isScene)
@@ -175,6 +178,7 @@ namespace CollabXR.ModPackager
 				}
 				else
 				{
+					SetVisible(menuObjectToggle, false);
 					SetVisible(menuObjectSettings, false);
 				}
 

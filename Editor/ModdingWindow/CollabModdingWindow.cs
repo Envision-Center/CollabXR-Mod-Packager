@@ -93,9 +93,6 @@ namespace CollabXR.ModPackager
 			ModEditorData extraData = projectDatabaseManager.TryGetModEditorData(target);
 			if (extraData != null)
 			{
-				/// This block checks if the mod has any extra prefab settings for the target platform
-				/// if so, generates thumbnails for those prefabs if they are set to auto-generate.
-				/// Scene thumbnails are not auto-generated, so don't care about them here.
 				foreach (Guid prefabUuid in metadataCopy.PrefabMap.Keys)
 				{
 					string uuidStr = prefabUuid.ToString();
@@ -118,6 +115,16 @@ namespace CollabXR.ModPackager
 						{
 							metadataCopy.PrefabMap[prefabUuid].Thumbnail = extraData.ExtraPrefabSettings[uuidStr].Texture;
 						}
+					}
+				}
+				foreach (Guid sceneUuid in metadataCopy.SceneMap.Keys)
+				{
+					string uuidStr = sceneUuid.ToString();
+					string assetPath = metadata.AssetMap[sceneUuid];
+					if (extraData.ExtraSceneSettings.Contains(uuidStr))
+					{
+						Logger.VerboseInfo($"Setting Thumbnail for Scene {assetPath}...");
+						metadataCopy.SceneMap[sceneUuid].Thumbnail = extraData.ExtraSceneSettings[uuidStr].Texture;
 					}
 				}
 			}

@@ -328,7 +328,7 @@ namespace CollabXR.ModPackager
 				OnRepositoryIndexProgress?.Invoke(50);
 
 				repositoryMods = await s3Client.GetModMetadata(
-					repositoryMetadata.Mods.ToList(),
+					repositoryMetadata.rootFolderLookUp.Keys.ToList(), repositoryMetadata.Mods.ToList(),
 					(progress) =>
 					{
 						if (progress == -2)

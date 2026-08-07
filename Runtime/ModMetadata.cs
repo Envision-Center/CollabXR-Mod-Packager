@@ -17,7 +17,7 @@ namespace CollabXR.ModPackager
 		public string Name;
 		public string Owner;
 		public string Attribution; // used if want to auto-populate all prefab attributions in bundle
-		public string TargetFolder; // uploads mod to the specified folder in bucket
+		[NonSerialized] public string TargetFolder; // uploads mod to the specified folder in bucket
 		public List<string> Creators;
 
 		public Dictionary<Guid, string> AssetMap;

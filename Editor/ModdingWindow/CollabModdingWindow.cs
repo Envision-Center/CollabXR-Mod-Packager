@@ -153,9 +153,8 @@ namespace CollabXR.ModPackager
 							Logger.VerboseInfo("Adding Mod to Upload Queue...");
 
 							// Combine mod path by formatting into "folder/uuid"
-							string mod = projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[targetAssetBundle].TargetFolder + "/" +
-										 projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[targetAssetBundle].Uuid;
-							repositoryManager.UploadMod(mod, target);
+							ModMetadata metaData = projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[targetAssetBundle];
+							repositoryManager.UploadMod(metaData, target);
 						}
 					}
 					else
@@ -1385,7 +1384,7 @@ namespace CollabXR.ModPackager
 
 			// Target upload folder
 
-			modTargetUploadFolder.value = "";
+			modTargetUploadFolder.value = projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].TargetFolder;
 			if (modTargetUploadFolderChangeEvent != null)
 				modTargetUploadFolder.UnregisterCallback(modTargetUploadFolderChangeEvent);
 			modTargetUploadFolderChangeEvent = (evt) =>
@@ -1711,19 +1710,19 @@ namespace CollabXR.ModPackager
 			closeUploads.clicked += closeUploadsEvent;
 		}
 
-		void UploadQueueUpdated(List<(Guid, BuildTarget, int)> uploads)
+		void UploadQueueUpdated(List<(ModMetadata, BuildTarget, int)> uploads)
 		{
 			bool shouldShowClose = true;
-			foreach ((Guid, BuildTarget, int) upload in uploads)
+			foreach ((ModMetadata, BuildTarget, int) upload in uploads)
 			{
 				if (upload.Item3 < 100 && upload.Item3 >= -1)
 				{
 					shouldShowClose = false;
 				}
 
-				if (!uploadProgressBars.ContainsKey((upload.Item1, upload.Item2)))
+				if (!uploadProgressBars.ContainsKey((upload.Item1.Uuid, upload.Item2)))
 				{
-					uploadProgressBars.Add((upload.Item1, upload.Item2), null);
+					uploadProgressBars.Add((upload.Item1.Uuid, upload.Item2), null);
 
 					QueuedActions.Add(() =>
 					{
@@ -1734,9 +1733,9 @@ namespace CollabXR.ModPackager
 
 						ProgressBar progressBar = newListElementRendered.Q<ProgressBar>("upload-progress-bar");
 
-						FormatProgressBarForUpload(progressBar, upload);
+						FormatProgressBarForUpload(progressBar, new(upload.Item1.Uuid, upload.Item2, upload.Item3));
 
-						uploadProgressBars[(upload.Item1, upload.Item2)] = progressBar;
+						uploadProgressBars[(upload.Item1.Uuid, upload.Item2)] = progressBar;
 
 						uploadsScrollview.Add(newListElementRendered);
 					});
@@ -1745,7 +1744,7 @@ namespace CollabXR.ModPackager
 				{
 					QueuedActions.Add(() =>
 					{
-						FormatProgressBarForUpload(uploadProgressBars[(upload.Item1, upload.Item2)], upload);
+						FormatProgressBarForUpload(uploadProgressBars[(upload.Item1.Uuid, upload.Item2)], new(upload.Item1.Uuid, upload.Item2, upload.Item3));
 					});
 				}
 			}

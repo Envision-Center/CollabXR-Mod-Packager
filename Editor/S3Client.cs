@@ -9,6 +9,7 @@ using Amazon.S3.Transfer;
 using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
+using WebSocketSharp;
 
 namespace CollabXR.ModPackager
 {
@@ -81,13 +82,18 @@ namespace CollabXR.ModPackager
 		}
 
 		// This uploads a mod file and metadata set present in the build directory to S3
-		public async Task<bool> UploadModAsync(Guid modUuid, BuildTarget target, Action<int> progressCallback)
+		public async Task<bool> UploadModAsync(Guid modUuid, string uploadFolder, BuildTarget target, Action<int> progressCallback)
 		{
 			Logger.VerboseInfo($"Uploading {modUuid} for {target} to S3...");
 
+			if (!uploadFolder.IsNullOrEmpty())
+			{
+				uploadFolder += "/";
+			}
+
 			// We initiate an upload targeting the actual built assetbundle to S3
 			bool firstPart = await UploadFileToS3(
-				$"{modUuid}.{target}",
+				$"{uploadFolder}{modUuid}.{target}",
 				Path.Combine(Application.dataPath, $"Build/{modUuid}.{target}"),
 				(progress) =>
 				{
@@ -106,7 +112,7 @@ namespace CollabXR.ModPackager
 
 			// We initiate an upload targeting the metadata json file for the mod to S3
 			bool secondPart = await UploadFileToS3(
-				$"{modUuid}.meta.json",
+				$"{uploadFolder}{modUuid}.meta.json",
 				Path.Combine(Application.dataPath, $"Build/{modUuid}.meta.json"),
 				(progress) =>
 				{

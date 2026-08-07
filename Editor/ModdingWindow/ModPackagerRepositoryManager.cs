@@ -57,9 +57,9 @@ namespace CollabXR.ModPackager
 			}
 		}
 
-		List<(Guid, BuildTarget, int)> pendingUploads = new();
+		List<(ModMetadata, BuildTarget, int)> pendingUploads = new();
 
-		public delegate void UploadQueueUpdateEvent(List<(Guid, BuildTarget, int)> uploads);
+		public delegate void UploadQueueUpdateEvent(List<(ModMetadata, BuildTarget, int)> uploads);
 		public event UploadQueueUpdateEvent OnUploadQueueUpdate;
 
 		public delegate void OnDeleteProgressEvent(Guid mod, int deleteProgress);
@@ -141,10 +141,12 @@ namespace CollabXR.ModPackager
 					{
 						Logger.VerboseInfo("Upload loop has an upload");
 
-						(Guid, BuildTarget, int) nextUpload = pendingUploads[0];
+						(ModMetadata, BuildTarget, int) nextUpload = pendingUploads[0];
+
 
 						_ = await s3Client.UploadModAsync(
-							nextUpload.Item1,
+							nextUpload.Item1.Uuid,
+							nextUpload.Item1.TargetFolder,
 							nextUpload.Item2,
 							(progress) =>
 							{
@@ -207,11 +209,11 @@ namespace CollabXR.ModPackager
 			awsAuth.SignOut();
 		}
 
-		public void UploadMod(Guid modUuid, BuildTarget buildTarget)
+		public void UploadMod(ModMetadata modMetaData, BuildTarget buildTarget)
 		{
-			Logging.LogInfo($"Mod {modUuid} built for {buildTarget} queued for upload...");
+			Logging.LogInfo($"Mod {modMetaData.Uuid} built for {buildTarget} queued for upload...");
 
-			pendingUploads.Add((modUuid, buildTarget, -1));
+			pendingUploads.Add((modMetaData, buildTarget, -1));
 			OnUploadQueueUpdate?.Invoke(pendingUploads);
 		}
 

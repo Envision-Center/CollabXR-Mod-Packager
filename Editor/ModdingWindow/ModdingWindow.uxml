@@ -76,6 +76,10 @@
                 <ui:DropdownField name="mod-preset-attributions" style="width: 80px; height: 20px" />
             </ui:Box>
 
+			<ui:Box style="flex-direction: row; align-items: center;">
+				<ui:TextField label="Create/Add to Folder" parse-escape-sequences="true" name="target-folder" style="flex-grow: 1;"/>
+			</ui:Box>
+
             <ui:ListView virtualization-method="DynamicHeight" reorder-mode="Animated" show-add-remove-footer="false" show-bound-collection-size="false" show-border="true" show-foldout-header="true" header-title="Versions" name="mod-versions-list" />
             <ui:ListView virtualization-method="DynamicHeight" reorder-mode="Animated" show-add-remove-footer="true" show-bound-collection-size="true" show-border="true" show-foldout-header="true" header-title="Creators" name="mod-creators-list" />
             <ui:TextField label="UUID" parse-escape-sequences="true" display-tooltip-when-elided="true" name="mod-uuid-field" readonly="true" />

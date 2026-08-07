@@ -151,7 +151,11 @@ namespace CollabXR.ModPackager
 						if (publish)
 						{
 							Logger.VerboseInfo("Adding Mod to Upload Queue...");
-							repositoryManager.UploadMod(projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[targetAssetBundle].Uuid, target);
+
+							// Combine mod path by formatting into "folder/uuid"
+							string mod = projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[targetAssetBundle].TargetFolder + "/" +
+										 projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[targetAssetBundle].Uuid;
+							repositoryManager.UploadMod(mod, target);
 						}
 					}
 					else
@@ -1091,6 +1095,8 @@ namespace CollabXR.ModPackager
 		EventCallback<ChangeEvent<string>> modAttributionFieldChangeEvent;
 		DropdownField modPresetAttributions;
 		EventCallback<ChangeEvent<string>> modPresetAttributionChangeEvent;
+		TextField modTargetUploadFolder;
+		EventCallback<ChangeEvent<string>> modTargetUploadFolderChangeEvent;
 		ListView modVersionList;
 		List<BuildTarget> modVersionListTargetOrder = new();
 		Dictionary<IntegerField, EventCallback<ChangeEvent<int>>> modVersionListChangeEvents = new();
@@ -1238,6 +1244,7 @@ namespace CollabXR.ModPackager
 			modOwnerField = modConfigBox.Q<TextField>("mod-owner-field");
 			modAttributionField = modConfigBox.Q<TextField>("mod-attribution-field");
 			modPresetAttributions = modConfigBox.Q<DropdownField>("mod-preset-attributions");
+			modTargetUploadFolder = modConfigBox.Q<TextField>("target-folder");
 			modVersionList = modConfigBox.Q<ListView>("mod-versions-list");
 			modCreatorList = modConfigBox.Q<ListView>("mod-creators-list");
 
@@ -1375,6 +1382,20 @@ namespace CollabXR.ModPackager
 				projectDatabaseManager.SaveAssetBundle(assetbundle);
 			};
 			modAttributionField.RegisterCallback(modAttributionFieldChangeEvent);
+
+			// Target upload folder
+
+			modTargetUploadFolder.value = "";
+			if (modTargetUploadFolderChangeEvent != null)
+				modTargetUploadFolder.UnregisterCallback(modTargetUploadFolderChangeEvent);
+			modTargetUploadFolderChangeEvent = (evt) =>
+			{
+				projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].TargetFolder = evt.newValue;
+
+				projectDatabaseManager.SaveAssetBundle(assetbundle);
+			};
+			modTargetUploadFolder.RegisterCallback(modTargetUploadFolderChangeEvent);
+			// TODO: add button to auto set folder to prefab's category, if categories are consistent
 
 			// Mod Version List
 

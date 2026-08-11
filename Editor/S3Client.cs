@@ -9,7 +9,6 @@ using Amazon.S3.Transfer;
 using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
-using WebSocketSharp;
 
 namespace CollabXR.ModPackager
 {
@@ -86,7 +85,7 @@ namespace CollabXR.ModPackager
 		{
 			Logger.VerboseInfo($"Uploading {modUuid} for {target} to S3...");
 
-			if (!uploadFolder.IsNullOrEmpty())
+			if (!string.IsNullOrEmpty(uploadFolder))
 			{
 				uploadFolder += "/";
 			}

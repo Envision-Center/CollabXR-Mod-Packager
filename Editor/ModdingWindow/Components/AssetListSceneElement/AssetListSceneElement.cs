@@ -31,6 +31,9 @@ namespace CollabXR.ModPackager
 		private TextField menuObjectAttributionField;
 		private DropdownField menuObjectAttributionPreset;
 
+		private ScrollView teleportScrollView;
+		private Button newTeleportButton;
+
 		private ObjectField menuObjectThumbnailSelect;
 		private HelpBox thumbnailImportError;
 		private Button autoFixThumbnailImportButton;
@@ -163,11 +166,9 @@ namespace CollabXR.ModPackager
 						menuObjectAttributionPreset.SetValueWithoutNotify((menuObjectAttributionPreset.choices.Count > 0) ? menuObjectAttributionPreset.choices[0] : "");
 
 						menuObjectThumbnailSelect.SetValueWithoutNotify(extraSceneSettings.Texture);
-
 						if (extraSceneSettings.Texture != null)
 						{
 							string texturePath = AssetDatabase.GetAssetPath(extraSceneSettings.Texture);
-
 							SetVisible(thumbnailImportError, CheckIfThumbnailTextureNeedsCorrection(texturePath));
 						}
 						else
@@ -210,6 +211,10 @@ namespace CollabXR.ModPackager
 			menuObjectAttributionField = this.Q<TextField>("menu-object-attribution-field");
 			menuObjectAttributionPreset = this.Q<DropdownField>("menu-object-preset-attributions");
 
+			teleportScrollView = this.Q<ScrollView>("teleport-scroll-view");
+
+			newTeleportButton = this.Q<Button>("new-teleport-button");
+
 			menuObjectThumbnailSelect = this.Q<ObjectField>("menu-object-thumbnail-select");
 			thumbnailImportError = this.Q<HelpBox>("thumbnail-import-error");
 			autoFixThumbnailImportButton = this.Q<Button>("autofix-thumbnail-import");
@@ -221,6 +226,20 @@ namespace CollabXR.ModPackager
 
 			SceneData = newSceneData;
 			ExtraSceneSettings = newExtraSceneSettings;
+
+			for (int i = 0; i < sceneData?.teleports.Count; i++)
+			{
+				string teleportName = new List<string>(sceneData.teleports.Keys)[i];
+				Vector3 teleportPosition = sceneData.teleports[teleportName];
+
+				SceneTeleportElement teleportElement = new SceneTeleportElement
+				(
+					teleportName,
+					teleportPosition
+				);
+
+				teleportScrollView.Add(teleportElement);
+			}
 
 			Logger.Info($"AssetListSceneElement created for {assetPath} with UUID {assetUuid}. Is scene: {sceneData != null && extraSceneSettings != null}");
 
@@ -312,6 +331,21 @@ namespace CollabXR.ModPackager
 				}
 			);
 
+			newTeleportButton.RegisterCallback<ClickEvent>(
+				(clickEvent) =>
+				{
+					// Create a new teleport element and add it to the list
+					Logger.Info($"Adding new teleport to scene {assetPath}");
+					string newTeleportName = sceneData.AddBlankTeleport();
+					SceneTeleportElement newTeleportElement = new SceneTeleportElement(
+						newTeleportName,
+						sceneData.teleports[newTeleportName]
+					);
+					teleportScrollView.Add(newTeleportElement);
+					UpdateSceneUI();
+				}
+			);
+
 			menuObjectThumbnailSelect.RegisterCallback<ChangeEvent<UnityEngine.Object>>(
 				(changeEvent) =>
 				{
@@ -342,6 +376,8 @@ namespace CollabXR.ModPackager
 					});
 				}
 			};
+
+			
 		}
 	}
 }

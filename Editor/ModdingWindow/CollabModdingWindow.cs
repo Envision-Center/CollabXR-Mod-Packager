@@ -1352,7 +1352,7 @@ namespace CollabXR.ModPackager
 				});
 			}
 			// setup "action counters" to track loading progress
-			float totalActions = projectDatabaseManager.TryGetModMetadata(assetbundle).AssetMap.Keys.Count + 2;
+			float totalActions = projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].AssetMap.Keys.Count + 2;
 			float actionsDone = 0;
 
 

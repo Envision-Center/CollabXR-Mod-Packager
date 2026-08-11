@@ -61,6 +61,21 @@ namespace CollabXR.ModPackager
 
 		[JsonConverter(typeof(Texture2DConverter))]
 		public Texture2D Thumbnail = null;
+
+		public string AddBlankTeleport()
+		{
+			string newTeleportName = "New Teleport";
+			int counter = 1;
+			while (teleports.ContainsKey(newTeleportName))
+			{
+				newTeleportName = $"New Teleport {counter}";
+				counter++;
+			}
+
+			teleports.Add(newTeleportName, Vector3.zero);
+
+			return newTeleportName;
+		}
 	}
 
 	public class Texture2DConverter : JsonConverter<Texture2D>

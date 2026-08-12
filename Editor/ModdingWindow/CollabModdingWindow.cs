@@ -177,7 +177,10 @@ namespace CollabXR.ModPackager
 						if (publish)
 						{
 							Logger.VerboseInfo("Adding Mod to Upload Queue...");
-							repositoryManager.UploadMod(projectDatabaseManager.TryGetModMetadata(targetAssetBundle).Uuid, target);
+
+							// Combine mod path by formatting into "folder/uuid"
+							ModMetadata metaData = projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[targetAssetBundle];
+							repositoryManager.UploadMod(metaData, target);
 						}
 					}
 					else
@@ -1117,6 +1120,8 @@ namespace CollabXR.ModPackager
 		EventCallback<ChangeEvent<string>> modAttributionFieldChangeEvent;
 		DropdownField modPresetAttributions;
 		EventCallback<ChangeEvent<string>> modPresetAttributionChangeEvent;
+		TextField modTargetUploadFolder;
+		EventCallback<ChangeEvent<string>> modTargetUploadFolderChangeEvent;
 		ListView modVersionList;
 		List<BuildTarget> modVersionListTargetOrder = new();
 		Dictionary<IntegerField, EventCallback<ChangeEvent<int>>> modVersionListChangeEvents = new();
@@ -1260,6 +1265,7 @@ namespace CollabXR.ModPackager
 			modOwnerField = modConfigBox.Q<TextField>("mod-owner-field");
 			modAttributionField = modConfigBox.Q<TextField>("mod-attribution-field");
 			modPresetAttributions = modConfigBox.Q<DropdownField>("mod-preset-attributions");
+			modTargetUploadFolder = modConfigBox.Q<TextField>("target-folder");
 			modVersionList = modConfigBox.Q<ListView>("mod-versions-list");
 			modCreatorList = modConfigBox.Q<ListView>("mod-creators-list");
 
@@ -1419,6 +1425,19 @@ namespace CollabXR.ModPackager
 				projectDatabaseManager.SaveAssetBundle(assetbundle);
 			};
 			modAttributionField.RegisterCallback(modAttributionFieldChangeEvent);
+
+			// Target upload folder
+
+			modTargetUploadFolder.value = projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].FolderPath;
+			if (modTargetUploadFolderChangeEvent != null)
+				modTargetUploadFolder.UnregisterCallback(modTargetUploadFolderChangeEvent);
+			modTargetUploadFolderChangeEvent = (evt) =>
+			{
+				projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].FolderPath = evt.newValue;
+
+				projectDatabaseManager.SaveAssetBundle(assetbundle);
+			};
+			modTargetUploadFolder.RegisterCallback(modTargetUploadFolderChangeEvent);
 
 			// VERSION LIST
 			modVersionList.bindItem = (element, index) => { };
@@ -1848,19 +1867,19 @@ namespace CollabXR.ModPackager
 			closeUploads.clicked += closeUploadsEvent;
 		}
 
-		void UploadQueueUpdated(List<(Guid, BuildTarget, int)> uploads)
+		void UploadQueueUpdated(List<(ModMetadata, BuildTarget, int)> uploads)
 		{
 			bool shouldShowClose = true;
-			foreach ((Guid, BuildTarget, int) upload in uploads)
+			foreach ((ModMetadata, BuildTarget, int) upload in uploads)
 			{
 				if (upload.Item3 < 100 && upload.Item3 >= -1)
 				{
 					shouldShowClose = false;
 				}
 
-				if (!uploadProgressBars.ContainsKey((upload.Item1, upload.Item2)))
+				if (!uploadProgressBars.ContainsKey((upload.Item1.Uuid, upload.Item2)))
 				{
-					uploadProgressBars.Add((upload.Item1, upload.Item2), null);
+					uploadProgressBars.Add((upload.Item1.Uuid, upload.Item2), null);
 
 					QueuedActions.Add(() =>
 					{
@@ -1871,9 +1890,9 @@ namespace CollabXR.ModPackager
 
 						ProgressBar progressBar = newListElementRendered.Q<ProgressBar>("upload-progress-bar");
 
-						FormatProgressBarForUpload(progressBar, upload);
+						FormatProgressBarForUpload(progressBar, new(upload.Item1.Uuid, upload.Item2, upload.Item3));
 
-						uploadProgressBars[(upload.Item1, upload.Item2)] = progressBar;
+						uploadProgressBars[(upload.Item1.Uuid, upload.Item2)] = progressBar;
 
 						uploadsScrollview.Add(newListElementRendered);
 					});
@@ -1882,7 +1901,7 @@ namespace CollabXR.ModPackager
 				{
 					QueuedActions.Add(() =>
 					{
-						FormatProgressBarForUpload(uploadProgressBars[(upload.Item1, upload.Item2)], upload);
+						FormatProgressBarForUpload(uploadProgressBars[(upload.Item1.Uuid, upload.Item2)], new(upload.Item1.Uuid, upload.Item2, upload.Item3));
 					});
 				}
 			}

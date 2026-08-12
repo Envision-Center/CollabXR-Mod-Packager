@@ -81,13 +81,18 @@ namespace CollabXR.ModPackager
 		}
 
 		// This uploads a mod file and metadata set present in the build directory to S3
-		public async Task<bool> UploadModAsync(Guid modUuid, BuildTarget target, Action<int> progressCallback)
+		public async Task<bool> UploadModAsync(Guid modUuid, string uploadFolder, BuildTarget target, Action<int> progressCallback)
 		{
 			Logger.VerboseInfo($"Uploading {modUuid} for {target} to S3...");
 
+			if (!string.IsNullOrEmpty(uploadFolder))
+			{
+				uploadFolder += "/";
+			}
+
 			// We initiate an upload targeting the actual built assetbundle to S3
 			bool firstPart = await UploadFileToS3(
-				$"{modUuid}.{target}",
+				$"{uploadFolder}{modUuid}.{target}",
 				Path.Combine(Application.dataPath, $"Build/{modUuid}.{target}"),
 				(progress) =>
 				{
@@ -106,7 +111,7 @@ namespace CollabXR.ModPackager
 
 			// We initiate an upload targeting the metadata json file for the mod to S3
 			bool secondPart = await UploadFileToS3(
-				$"{modUuid}.meta.json",
+				$"{uploadFolder}{modUuid}.meta.json",
 				Path.Combine(Application.dataPath, $"Build/{modUuid}.meta.json"),
 				(progress) =>
 				{
@@ -231,7 +236,7 @@ namespace CollabXR.ModPackager
 			return true;
 		}
 
-		public async Task<Dictionary<Guid, (ModMetadata, Dictionary<BuildTarget, bool>)>> GetModMetadata(List<Guid> mods, Action<int> progressCallback)
+		public async Task<Dictionary<Guid, (ModMetadata, Dictionary<BuildTarget, bool>)>> GetModMetadata(List<Guid> mods, List<string> modPaths, Action<int> progressCallback)
 		{
 			float totalObjects = (mods.Count * (CollabModdingWindow.SupportedTargets.Count + 2)) + 1;
 			float retrievedObjects = 0;
@@ -270,9 +275,12 @@ namespace CollabXR.ModPackager
 
 			List<string> validObjects = response.S3Objects.Select(s3object => s3object.Key).ToList();
 
-			foreach (Guid mod in mods)
+			for (int i = 0; i < modPaths.Count; i++)
 			{
-				if (validObjects.Contains($"{mod}.meta.json"))
+				Guid mod = mods[i];
+				string modPath = modPaths[i];
+
+				if (validObjects.Contains($"{modPath}.meta.json"))
 				{
 					Logger.VerboseInfo($"Getting Metadata for Mod {mod} from S3...");
 
@@ -280,11 +288,11 @@ namespace CollabXR.ModPackager
 
 					try
 					{
-						objectResponse = await client.GetObjectAsync(bucketName, $"{mod}.meta.json");
+						objectResponse = await client.GetObjectAsync(bucketName, $"{modPath}.meta.json");
 					}
 					catch (Exception e)
 					{
-						Logger.VerboseError($"Failed to get metadata for {mod}");
+						Logger.VerboseError($"Failed to get metadata for {modPath}");
 						Logger.VerboseError(e);
 
 						retrievedObjects += 2 + CollabModdingWindow.SupportedTargets.Count;
@@ -295,7 +303,7 @@ namespace CollabXR.ModPackager
 
 					if (objectResponse.HttpStatusCode != System.Net.HttpStatusCode.OK)
 					{
-						Logger.VerboseError($"Failed to get metadata for {mod}");
+						Logger.VerboseError($"Failed to get metadata for {modPath}");
 
 						retrievedObjects += 2 + CollabModdingWindow.SupportedTargets.Count;
 						progressCallback?.Invoke((int)Math.Floor((retrievedObjects / totalObjects) * 100));
@@ -320,7 +328,7 @@ namespace CollabXR.ModPackager
 					}
 					catch (Exception e)
 					{
-						Logger.VerboseError($"Failed to deserialize metadata for {mod}");
+						Logger.VerboseError($"Failed to deserialize metadata for {modPath}");
 						Logger.VerboseError(e);
 
 						retrievedObjects += 1 + CollabModdingWindow.SupportedTargets.Count;
@@ -336,7 +344,7 @@ namespace CollabXR.ModPackager
 
 					foreach (BuildTarget target in CollabModdingWindow.SupportedTargets.Keys)
 					{
-						buildTargets.Add(target, validObjects.Contains($"{mod}.{target}"));
+						buildTargets.Add(target, validObjects.Contains($"{modPath}.{target}"));
 
 						retrievedObjects++;
 						progressCallback?.Invoke((int)Math.Floor((retrievedObjects / totalObjects) * 100));
@@ -346,7 +354,7 @@ namespace CollabXR.ModPackager
 				}
 				else
 				{
-					Logger.VerboseInfo($"Mod {mod} doesn't exist on S3");
+					Logger.VerboseInfo($"Mod {modPath} doesn't exist on S3");
 				}
 			}
 

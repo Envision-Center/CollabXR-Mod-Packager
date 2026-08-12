@@ -235,7 +235,8 @@ namespace CollabXR.ModPackager
 				SceneTeleportElement teleportElement = new SceneTeleportElement
 				(
 					teleportName,
-					teleportPosition
+					teleportPosition,
+					sceneData
 				);
 
 				teleportScrollView.Add(teleportElement);
@@ -339,12 +340,70 @@ namespace CollabXR.ModPackager
 					string newTeleportName = sceneData.AddBlankTeleport();
 					SceneTeleportElement newTeleportElement = new SceneTeleportElement(
 						newTeleportName,
-						sceneData.teleports[newTeleportName]
+						sceneData.teleports[newTeleportName],
+						sceneData
 					);
 					teleportScrollView.Add(newTeleportElement);
 					UpdateSceneUI();
 				}
 			);
+
+			for (int i = 0; i < teleportScrollView.childCount; i++)
+			{
+				SceneTeleportElement teleportElement = teleportScrollView[i] as SceneTeleportElement;
+
+				// when the teleport name is changed, we need to update the key in the sceneDataRef.teleports dictionary
+				teleportElement.teleportName.RegisterCallback<ChangeEvent<string>>(
+					(changeEvent) =>
+					{
+						if (sceneData != null)
+						{
+							// new name is empty
+							if (string.IsNullOrEmpty(changeEvent.newValue))
+							{
+								teleportElement.TeleportName = changeEvent.previousValue;
+							}
+							// new name already exists
+							else if (sceneData.teleports.ContainsKey(changeEvent.newValue))
+							{
+								teleportElement.TeleportName = changeEvent.previousValue;
+							}
+							else
+							{
+								sceneData.teleports.Remove(changeEvent.previousValue);
+								sceneData.teleports.Add(changeEvent.newValue, teleportElement.TeleportPosition);
+							}
+							OnSceneDataChanged?.Invoke(sceneData);
+						}
+					}
+				);
+
+				// when the teleport position is changed, we need to update the value in the sceneDataRef.teleports dictionary
+				teleportElement.teleportPosition.RegisterCallback<ChangeEvent<Vector3>>(
+					(changeEvent) =>
+					{
+						if (sceneData != null && sceneData.teleports.ContainsKey(teleportElement.TeleportName))
+						{
+							teleportElement.TeleportPosition = changeEvent.newValue;
+							sceneData.teleports[teleportElement.TeleportName] = teleportElement.TeleportPosition;
+						}
+						OnSceneDataChanged?.Invoke(sceneData);
+					}
+				);
+
+				// when the delete button is clicked, remove the teleport from the sceneDataRef.teleports dictionary and the scroll view
+				teleportElement.deleteButton.RegisterCallback<ClickEvent>(evt =>
+				{
+					if (sceneData.teleports.ContainsKey(teleportElement.TeleportName))
+					{
+						sceneData.teleports.Remove(teleportElement.TeleportName);
+					}
+					teleportScrollView.Remove(teleportElement);
+
+					UpdateSceneUI();
+					MarkDirtyRepaint();
+				});
+			}
 
 			menuObjectThumbnailSelect.RegisterCallback<ChangeEvent<UnityEngine.Object>>(
 				(changeEvent) =>

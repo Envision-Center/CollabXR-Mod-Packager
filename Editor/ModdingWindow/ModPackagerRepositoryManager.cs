@@ -146,7 +146,7 @@ namespace CollabXR.ModPackager
 
 						_ = await s3Client.UploadModAsync(
 							nextUpload.Item1.Uuid,
-							nextUpload.Item1.TargetFolder,
+							nextUpload.Item1.FolderPath,
 							nextUpload.Item2,
 							(progress) =>
 							{

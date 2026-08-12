@@ -77,7 +77,7 @@
             </ui:Box>
 
 			<ui:Box style="flex-direction: row; align-items: center;">
-				<ui:TextField label="Create/Add to Folder" parse-escape-sequences="true" name="target-folder" style="flex-grow: 1;"/>
+				<ui:TextField label="Create/Add to Folder" parse-escape-sequences="true" display-tooltip-when-elided="true" name="target-folder" style="flex-grow: 1;" tooltip="Leave blank to add Mod directly to bucket without a container folder" />
 			</ui:Box>
 
             <ui:ListView virtualization-method="DynamicHeight" reorder-mode="Animated" show-add-remove-footer="false" show-bound-collection-size="false" show-border="true" show-foldout-header="true" header-title="Versions" name="mod-versions-list" />

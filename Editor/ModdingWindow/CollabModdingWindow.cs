@@ -1384,17 +1384,16 @@ namespace CollabXR.ModPackager
 
 			// Target upload folder
 
-			modTargetUploadFolder.value = projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].TargetFolder;
+			modTargetUploadFolder.value = projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].FolderPath;
 			if (modTargetUploadFolderChangeEvent != null)
 				modTargetUploadFolder.UnregisterCallback(modTargetUploadFolderChangeEvent);
 			modTargetUploadFolderChangeEvent = (evt) =>
 			{
-				projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].TargetFolder = evt.newValue;
+				projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].FolderPath = evt.newValue;
 
 				projectDatabaseManager.SaveAssetBundle(assetbundle);
 			};
 			modTargetUploadFolder.RegisterCallback(modTargetUploadFolderChangeEvent);
-			// TODO: add button to auto set folder to prefab's category, if categories are consistent
 
 			// Mod Version List
 

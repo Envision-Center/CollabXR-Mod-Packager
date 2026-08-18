@@ -1,6 +1,6 @@
 {
 	"name": "edu.envision.collabmodpackager",
-	"version": "6.0.3",
+	"version": "6.1.0",
 	"displayName": "CollabXR Mod Packager",
 	"description": "This is tool for packaging assets and prefabs to be imported in to CollabXR",
 	"unity": "2022.3",

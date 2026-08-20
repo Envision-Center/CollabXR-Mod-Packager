@@ -9,7 +9,6 @@ namespace CollabXR.ModPackager
 	{
 		private Label popupLabel;
 
-		[SerializeField]
 		[UxmlAttribute("text")]
 		public string Text
 		{

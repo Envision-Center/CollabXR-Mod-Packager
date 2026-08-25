@@ -31,6 +31,36 @@ namespace CollabXR.ModPackager
 			AssetPostProcessListener.OnAssetPostProcessEvent += AssetPostProcessCallback;
 		}
 
+		///
+		/// ACCESSOR METHODS
+		/// 
+
+		public ModMetadata TryGetModMetadata(string assetBundleName)
+		{
+			if (ProjectDatabase == null || IsCorrupt)
+				return null;
+
+			if (ProjectDatabase.AssetbundleToModMap.TryGetValue(assetBundleName, out ModMetadata mod))
+			{
+				return mod;
+			}
+
+			return null;
+		}
+		public ModEditorData TryGetModEditorData(string assetBundleName)
+		{
+			if (ProjectDatabase == null || IsCorrupt)
+				return null;
+
+			if (ProjectDatabase.AssetbundleToExtraDataMap.TryGetValue(assetBundleName, out ModEditorData modSettings))
+			{
+				return modSettings;
+			}
+
+			return null;
+		}
+
+
 		/// <summary>
 		/// If the Project Database does not exist or is corrupt,
 		/// this attempts to reload it from disk, and returns false.
@@ -243,11 +273,28 @@ namespace CollabXR.ModPackager
 						Creators = new(),
 						AssetMap = new(),
 						PrefabMap = new(),
+						SceneMap = new(),
 						LatestTestedVersion = "v0.8.11",
 					};
 
 					// Add to database
 					ProjectDatabase.AssetbundleToModMap.Add(assetBundleName, mod);
+				}
+				// Ensure mod metadata creates all necessary maps
+				if (mod.AssetMap == null)
+				{
+					Logger.VerboseInfo($"AssetBundle \"{assetBundleName}\" has no asset map, creating new...");
+					mod.AssetMap = new();
+				}
+				if (mod.PrefabMap == null)
+				{
+					Logger.VerboseInfo($"AssetBundle \"{assetBundleName}\" has no prefab map, creating new...");
+					mod.PrefabMap = new();
+				}
+				if (mod.SceneMap == null)
+				{
+					Logger.VerboseInfo($"AssetBundle \"{assetBundleName}\" has no scene map, creating new...");
+					mod.SceneMap = new();
 				}
 
 				// Ensure mod has version list
@@ -284,6 +331,7 @@ namespace CollabXR.ModPackager
 				// Create a list for pruning Assets and Prefabs
 				List<Guid> invalidAssetUuids = mod.AssetMap.Keys.ToList();
 				List<Guid> invalidPrefabUuids = mod.PrefabMap.Keys.ToList();
+				List<Guid> invalidSceneUuids = mod.SceneMap.Keys.ToList();
 
 				// For every item in the Asset Bundle...
 				foreach (string asset in AssetDatabase.GetAssetPathsFromAssetBundle(assetBundleName))
@@ -332,6 +380,23 @@ namespace CollabXR.ModPackager
 							Logger.VerboseInfo($"Asset \"{asset}\" (from AssetBundle \"{assetBundleName}\") has extra prefab data");
 						}
 					}
+					// do the same thing for scenes
+					if (mod.SceneMap.ContainsKey(assetUuid) && AssetDatabase.GetMainAssetTypeFromGUID(new GUID(databaseGuid)) == typeof(SceneAsset))
+					{
+						Logger.VerboseInfo($"Found Asset \"{asset}\" (from AssetBundle \"{assetBundleName}\") in scene map");
+						invalidSceneUuids.Remove(assetUuid);
+
+						// Ensure editor-only metadata exists
+						if (!modSettings.ExtraSceneSettings.ContainsKey(assetUuid.ToString()))
+						{
+							Logger.VerboseInfo($"Asset \"{asset}\" (from AssetBundle \"{assetBundleName}\") has no extra scene data, creating new...");
+							modSettings.ExtraSceneSettings.Add(assetUuid.ToString(), new ExtraSceneSettings());
+						}
+						else
+						{
+							Logger.VerboseInfo($"Asset \"{asset}\" (from AssetBundle \"{assetBundleName}\") has extra scene data");
+						}
+					}
 				}
 
 				// Prune unused prefab data
@@ -339,7 +404,13 @@ namespace CollabXR.ModPackager
 				{
 					Logger.VerboseInfo($"Asset \"{mod.AssetMap[invalidPrefabUuid]}\" (from AssetBundle \"{assetBundleName}\") no longer exists, removing from prefab map...");
 					mod.PrefabMap.Remove(invalidPrefabUuid);
-					// ProjectDatabase.AssetbundleToExtraDataMap[assetBundleName].PrefabTextureSettings.Remove(invalidPrefabUuid.ToString());
+				}
+
+				// Prune unused scene data
+				foreach (Guid invalidSceneUuid in invalidSceneUuids)
+				{
+					Logger.VerboseInfo($"Asset \"{mod.AssetMap[invalidSceneUuid]}\" (from AssetBundle \"{assetBundleName}\") no longer exists, removing from scene map...");
+					mod.SceneMap.Remove(invalidSceneUuid);
 				}
 
 				// Prune unused asset data

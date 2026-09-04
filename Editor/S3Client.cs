@@ -85,6 +85,7 @@ namespace CollabXR.ModPackager
 		{
 			Logger.VerboseInfo($"Uploading {modUuid} for {target} to S3...");
 
+			// Sanitize the upload destination
 			if (!string.IsNullOrEmpty(uploadFolder))
 			{
 				uploadFolder = uploadFolder.TrimEnd('/') + '/';

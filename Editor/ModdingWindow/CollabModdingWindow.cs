@@ -72,6 +72,12 @@ namespace CollabXR.ModPackager
 			}
 		}
 
+		void SetWarningMessage(string warning, bool visible = true)
+		{
+			SetVisible(warningBox, visible);
+			warningMsg.text = warning;
+		}
+
 		ModMetadata PreprocessMetadata(string target, ModMetadata metadata)
 		{
 			Logger.VerboseInfo($"Preprocessing Mod Metadata for {target}...");
@@ -410,6 +416,9 @@ namespace CollabXR.ModPackager
 		TextField mfaCodeField;
 		Button mfaCodeSubmitButton;
 
+		Box warningBox;
+		Label warningMsg;
+
 		Box buildBox;
 		Box buildPublishBox;
 
@@ -460,6 +469,9 @@ namespace CollabXR.ModPackager
 			{
 				mfaChallengeWaitHandle.Set();
 			};
+
+			warningBox = UIRootVisualElement.Q<Box>("warning-box");
+			warningMsg = UIRootVisualElement.Q<Label>("warning-msg");
 
 			buildBox = UIRootVisualElement.Q<Box>("build-box");
 			buildPublishBox = UIRootVisualElement.Q<Box>("build-publish-box");
@@ -514,6 +526,8 @@ namespace CollabXR.ModPackager
 				SetVisible(signOutBox, false);
 				SetVisible(buildBox, true);
 				SetVisible(buildPublishBox, false);
+
+				SetWarningMessage("");
 
 				UIRootVisualElement.MarkDirtyRepaint();
 			});
@@ -1389,7 +1403,12 @@ namespace CollabXR.ModPackager
 				modTargetUploadFolder.UnregisterCallback(modTargetUploadFolderChangeEvent);
 			modTargetUploadFolderChangeEvent = (evt) =>
 			{
-				projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].FolderPath = evt.newValue;
+				var modMetadata = projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle];
+				if (repositoryManager.repositoryMetadata.rootFolderLookUp.TryGetValue(modMetadata.Uuid, out var root) && !root.Equals(evt.newValue))
+				{
+					SetWarningMessage("A mod with duplicate UUID already exists in the bucket. Uploading to the new location will delete the existing one.");
+				}
+				modMetadata.FolderPath = evt.newValue;
 
 				projectDatabaseManager.SaveAssetBundle(assetbundle);
 			};

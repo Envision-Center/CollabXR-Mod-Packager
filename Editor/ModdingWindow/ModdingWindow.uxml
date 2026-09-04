@@ -102,6 +102,10 @@
             <ui:ScrollView name="uploads-scrollview"/>
         </ui:Box>
 
+		<ui:Box style="flex-grow: 0; flex-shrink: 0; flex-direction: column; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px; display: none;" name="warning-box">
+			<ui:Label style="color: orange;" text="Test warning message" name="warning-msg"/>
+        </ui:Box>
+
         <ui:Box style="flex-grow: 0; flex-shrink: 0; flex-direction: column; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;" name="build-box">
             <ui:Label style="margin-bottom: 8px;" tabindex="-1" text="Please sign in to publish mods" parse-escape-sequences="true" display-tooltip-when-elided="true"/>
             <ui:Box style="flex-grow: 0; flex-shrink: 0; flex-direction: row; background-color: transparent; margin: 0px; padding: 0px; border-width: 0px;">
@@ -109,6 +113,7 @@
                 <ui:Button style="flex-grow: 1; flex-shrink: 0;" text="Build Offline" name="build" />
             </ui:Box>
         </ui:Box>
+
         <ui:Box style="flex-grow: 0; flex-shrink: 0; flex-direction: column; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;" name="build-publish-box">
             <ui:Box style="flex-grow: 0; flex-shrink: 0; flex-direction: row; background-color: transparent; margin: 0px; padding: 0px; border-width: 0px;">
                 <ecm:CustomPopupButton style="flex-grow: 1; flex-shrink: 0; max-width: 200px;" text="No Targets Selected" name="build-publish-selector" />

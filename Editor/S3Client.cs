@@ -87,7 +87,7 @@ namespace CollabXR.ModPackager
 
 			if (!string.IsNullOrEmpty(uploadFolder))
 			{
-				uploadFolder += "/";
+				uploadFolder = uploadFolder.TrimEnd('/') + '/';
 			}
 
 			// We initiate an upload targeting the actual built assetbundle to S3

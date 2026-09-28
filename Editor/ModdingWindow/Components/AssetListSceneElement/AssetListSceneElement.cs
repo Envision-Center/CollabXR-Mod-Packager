@@ -31,8 +31,8 @@ namespace CollabXR.ModPackager
 		private TextField menuObjectAttributionField;
 		private DropdownField menuObjectAttributionPreset;
 
-		private ScrollView teleportScrollView;
-		private Button newTeleportButton;
+		// private ScrollView teleportScrollView;
+		// private Button newTeleportButton;
 
 		private ObjectField menuObjectThumbnailSelect;
 		private HelpBox thumbnailImportError;
@@ -211,9 +211,9 @@ namespace CollabXR.ModPackager
 			menuObjectAttributionField = this.Q<TextField>("menu-object-attribution-field");
 			menuObjectAttributionPreset = this.Q<DropdownField>("menu-object-preset-attributions");
 
-			teleportScrollView = this.Q<ScrollView>("teleport-scroll-view");
+			// teleportScrollView = this.Q<ScrollView>("teleport-scroll-view");
 
-			newTeleportButton = this.Q<Button>("new-teleport-button");
+			// newTeleportButton = this.Q<Button>("new-teleport-button");
 
 			menuObjectThumbnailSelect = this.Q<ObjectField>("menu-object-thumbnail-select");
 			thumbnailImportError = this.Q<HelpBox>("thumbnail-import-error");
@@ -227,7 +227,7 @@ namespace CollabXR.ModPackager
 			SceneData = newSceneData;
 			ExtraSceneSettings = newExtraSceneSettings;
 
-			for (int i = 0; i < sceneData?.teleports.Count; i++)
+			/*for (int i = 0; i < sceneData?.teleports.Count; i++)
 			{
 				string teleportName = new List<string>(sceneData.teleports.Keys)[i];
 				Vector3 teleportPosition = sceneData.teleports[teleportName];
@@ -240,7 +240,7 @@ namespace CollabXR.ModPackager
 				);
 
 				teleportScrollView.Add(teleportElement);
-			}
+			}*/
 
 			Logger.Info($"AssetListSceneElement created for {assetPath} with UUID {assetUuid}. Is scene: {sceneData != null && extraSceneSettings != null}");
 
@@ -332,7 +332,7 @@ namespace CollabXR.ModPackager
 				}
 			);
 
-			newTeleportButton.RegisterCallback<ClickEvent>(
+			/*newTeleportButton.RegisterCallback<ClickEvent>(
 				(clickEvent) =>
 				{
 					// Create a new teleport element and add it to the list
@@ -403,7 +403,7 @@ namespace CollabXR.ModPackager
 					UpdateSceneUI();
 					MarkDirtyRepaint();
 				});
-			}
+			}*/
 
 			menuObjectThumbnailSelect.RegisterCallback<ChangeEvent<UnityEngine.Object>>(
 				(changeEvent) =>

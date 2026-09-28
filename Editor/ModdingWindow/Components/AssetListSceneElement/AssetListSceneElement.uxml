@@ -22,8 +22,8 @@
                 <ui:DropdownField name="menu-object-preset-attributions" style="width: 80px; height: 20px" />
             </ui:Box>
 
-            <ui:ScrollView header-title="Teleports" name="teleport-scroll-view" />
-            <ui:Button style="flex-grow: 1; flex-shrink: 0;" text="New Teleport" name="new-teleport-button"/>
+            <!-- <ui:ScrollView header-title="Teleports" name="teleport-scroll-view" />
+            <ui:Button style="flex-grow: 1; flex-shrink: 0;" text="New Teleport" name="new-teleport-button"/> -->
 
             <ui:Label tabindex="-1" text="Thumbnail" parse-escape-sequences="true" display-tooltip-when-elided="true" style="margin: 3px; margin-top: 9px;" />
             <uie:ObjectField type="UnityEngine.Texture2D, UnityEngine.CoreModule" label="Select" name="menu-object-thumbnail-select" />

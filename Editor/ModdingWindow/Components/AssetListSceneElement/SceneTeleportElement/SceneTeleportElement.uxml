@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ecm="CollabXR.ModPackager" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="SceneTeleportElement.uss" />
+    <ui:Box style="flex-direction: column; flex-grow: 1; margin: 0px; border-top-width: 1px; border-top-color: #1A1A1A; background-color: transparent; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
+        <ui:TextField label="Name" parse-escape-sequences="true" display-tooltip-when-elided="true" name="teleport-name" readonly="false" />
+        <ui:Vector3Field label="Position" parse-escape-sequences="true" display-tooltip-when-elided="true" name="teleport-position" readonly="false" />
+        <ui:Box style="align-items: center; width: 100%; flex-direction: row; flex-grow: 0; flex-shrink: 0; background-color: transparent;">
+            <ui:Button style="flex-grow: 0; flex-shrink: 0;" text="Delete" name="delete-teleport-button"/>
+        </ui:Box>
+    </ui:Box>
+</ui:UXML>

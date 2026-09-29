@@ -72,6 +72,16 @@ namespace CollabXR.ModPackager
 			}
 		}
 
+		/// <summary>
+		/// Preprocesses the mod metadata for a given target platform, generating thumbnails for prefabs if needed.
+		/// </summary>
+		/// <param name="target">The name of the target asset bundle.</param>
+		/// <param name="metadata">The mod metadata to preprocess.</param>
+		/// <returns>The preprocessed mod metadata.</returns>
+		/// <details>
+		/// Currently only generates thumbnails for prefabs that have the "AutoGenerate" flag set in the extra prefab settings for the target platform.
+		/// Besides thumbnail stuff, this function is a no-op and just returns a copy of the metadata.
+		/// </details>
 		ModMetadata PreprocessMetadata(string target, ModMetadata metadata)
 		{
 			Logger.VerboseInfo($"Preprocessing Mod Metadata for {target}...");
@@ -80,13 +90,15 @@ namespace CollabXR.ModPackager
 
 			ModMetadata metadataCopy = JsonConvert.DeserializeObject<ModMetadata>(metadataString);
 
-			if (projectDatabaseManager.ProjectDatabase.AssetbundleToExtraDataMap.Contains(target))
+			ModEditorData extraData = projectDatabaseManager.TryGetModEditorData(target);
+			if (extraData != null)
 			{
 				foreach (Guid prefabUuid in metadataCopy.PrefabMap.Keys)
 				{
-					if (projectDatabaseManager.ProjectDatabase.AssetbundleToExtraDataMap[target].ExtraPrefabSettings.Contains(prefabUuid.ToString()))
+					string uuidStr = prefabUuid.ToString();
+					if (extraData.ExtraPrefabSettings.Contains(uuidStr))
 					{
-						if (projectDatabaseManager.ProjectDatabase.AssetbundleToExtraDataMap[target].ExtraPrefabSettings[prefabUuid.ToString()].AutoGenerate)
+						if (extraData.ExtraPrefabSettings[uuidStr].AutoGenerate)
 						{
 							string assetPath = metadata.AssetMap[prefabUuid];
 
@@ -101,8 +113,18 @@ namespace CollabXR.ModPackager
 						}
 						else
 						{
-							metadataCopy.PrefabMap[prefabUuid].Thumbnail = projectDatabaseManager.ProjectDatabase.AssetbundleToExtraDataMap[target].ExtraPrefabSettings[prefabUuid.ToString()].Texture;
+							metadataCopy.PrefabMap[prefabUuid].Thumbnail = extraData.ExtraPrefabSettings[uuidStr].Texture;
 						}
+					}
+				}
+				foreach (Guid sceneUuid in metadataCopy.SceneMap.Keys)
+				{
+					string uuidStr = sceneUuid.ToString();
+					string assetPath = metadata.AssetMap[sceneUuid];
+					if (extraData.ExtraSceneSettings.Contains(uuidStr))
+					{
+						Logger.VerboseInfo($"Setting Thumbnail for Scene {assetPath}...");
+						metadataCopy.SceneMap[sceneUuid].Thumbnail = extraData.ExtraSceneSettings[uuidStr].Texture;
 					}
 				}
 			}
@@ -122,7 +144,7 @@ namespace CollabXR.ModPackager
 
 			foreach (BuildTarget target in targets)
 			{
-				projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[targetAssetBundle].BuildNumberMap[target.ToString()]++;
+				projectDatabaseManager.TryGetModMetadata(targetAssetBundle).BuildNumberMap[target.ToString()]++;
 			}
 
 			projectDatabaseManager.ReimportAssets();
@@ -146,7 +168,11 @@ namespace CollabXR.ModPackager
 
 						Logger.VerboseInfo($"Compiling Mod for {target}...");
 
-						ModCompiler.CompileMod(targetAssetBundle, PreprocessMetadata(targetAssetBundle, projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[targetAssetBundle]), target);
+						ModCompiler.CompileMod(
+							targetAssetBundle,
+							PreprocessMetadata(targetAssetBundle, projectDatabaseManager.TryGetModMetadata(targetAssetBundle)),
+							target
+						);
 
 						if (publish)
 						{
@@ -1220,24 +1246,20 @@ namespace CollabXR.ModPackager
 
 		void ReloadAssetBundleUI(string assetbundle)
 		{
+			///
+			/// STEP 1:
+			/// Setup UI references and clear any previous data
+			/// ----------------------------------------------------------------------------------
+
+
 			QueuedActions.Add(() =>
 			{
+				// init progress load bar to 0 
 				OnAssetBundleLoadProgress(0);
 			});
 
-			// Init and clean up UI
-
+			// setup references to all the UI elements we need to update
 			modConfigBox = UIRootVisualElement.Q<Box>("mod-config-box");
-
-			buildSelectorButton = UIRootVisualElement.Q<CustomPopupButton>("build-selector");
-			buildButton = UIRootVisualElement.Q<Button>("build");
-			buildPublishSelectorButton = UIRootVisualElement.Q<CustomPopupButton>("build-publish-selector");
-			buildPublishButton = UIRootVisualElement.Q<Button>("build-publish");
-
-			assetSearchField = UIRootVisualElement.Q<ToolbarSearchField>("asset-search");
-			assetFilterField = UIRootVisualElement.Q<MaskField>("asset-filter");
-
-			assetsScrollview = UIRootVisualElement.Q<ScrollView>("assets-scrollview");
 
 			modNameField = modConfigBox.Q<TextField>("mod-name-field");
 			modOwnerField = modConfigBox.Q<TextField>("mod-owner-field");
@@ -1247,34 +1269,49 @@ namespace CollabXR.ModPackager
 			modVersionList = modConfigBox.Q<ListView>("mod-versions-list");
 			modCreatorList = modConfigBox.Q<ListView>("mod-creators-list");
 
+			assetSearchField = UIRootVisualElement.Q<ToolbarSearchField>("asset-search");
+			assetFilterField = UIRootVisualElement.Q<MaskField>("asset-filter");
+			assetsScrollview = UIRootVisualElement.Q<ScrollView>("assets-scrollview");
+
+			buildSelectorButton = UIRootVisualElement.Q<CustomPopupButton>("build-selector");
+			buildButton = UIRootVisualElement.Q<Button>("build");
+			buildPublishSelectorButton = UIRootVisualElement.Q<CustomPopupButton>("build-publish-selector");
+			buildPublishButton = UIRootVisualElement.Q<Button>("build-publish");
+
 			QueuedActions.Add(() =>
 			{
+				// remove all previous asset list elements from the scrollview
 				assetsScrollview.Clear();
 			});
 
+			// clear callbacks
 			while (assetSearchChangedCallbacks.Count > 0)
 			{
 				assetSearchField.UnregisterCallback(assetSearchChangedCallbacks[0]);
 				assetSearchChangedCallbacks.RemoveAt(0);
 			}
 
+			// clear any asset search fields, filters, and filter callbacks
 			QueuedActions.Add(() =>
 			{
 				assetSearchField.value = "";
 			});
-
 			QueuedActions.Add(() =>
 			{
 				assetTypeList.Clear();
 			});
-
 			while (assetFilterChangedCallbacks.Count > 0)
 			{
 				assetFilterField.UnregisterCallback(assetFilterChangedCallbacks[0]);
 				assetFilterChangedCallbacks.RemoveAt(0);
 			}
 
-			// Initial update rejection
+
+			///
+			/// STEP 2:
+			/// Initialize Asset UI if assetBundle exists
+			/// ----------------------------------------------------------------------------------
+
 
 			if (assetbundle == null)
 			{
@@ -1320,40 +1357,46 @@ namespace CollabXR.ModPackager
 					SetVisible(modConfigBox, true);
 				});
 			}
-
+			// setup "action counters" to track loading progress
 			float totalActions = projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].AssetMap.Keys.Count + 2;
 			float actionsDone = 0;
 
-			// Mod Name Field
 
-			modNameField.value = projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].Name;
+			///
+			/// STEP 3:
+			/// Populate Mod Metadata UI fields with data from the project database
+			/// ----------------------------------------------------------------------------------
+
+			ModMetadata modMetadataRef = projectDatabaseManager.TryGetModMetadata(assetbundle);
+			ModEditorData modExtraDataRef = projectDatabaseManager.TryGetModEditorData(assetbundle);
+
+			// NAME
+			modNameField.value = modMetadataRef.Name;
 			if (modNameFieldChangeEvent != null)
 				modNameField.UnregisterCallback(modNameFieldChangeEvent);
 			modNameFieldChangeEvent = (evt) =>
 			{
-				projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].Name = evt.newValue;
+				modMetadataRef.Name = evt.newValue;
 
 				projectDatabaseManager.SaveAssetBundle(assetbundle);
 			};
 			modNameField.RegisterCallback(modNameFieldChangeEvent);
 
-			// Mod Owner Field
-
-			modOwnerField.value = projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].Owner;
+			// OWNER
+			modOwnerField.value = modMetadataRef.Owner;
 			if (modOwnerFieldChangeEvent != null)
 				modOwnerField.UnregisterCallback(modOwnerFieldChangeEvent);
 			modOwnerFieldChangeEvent = (evt) =>
 			{
-				projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].Owner = evt.newValue;
+				modMetadataRef.Owner = evt.newValue;
 
 				projectDatabaseManager.SaveAssetBundle(assetbundle);
 			};
 			modOwnerField.RegisterCallback(modOwnerFieldChangeEvent);
 
-			// Mod Attribution Field
-
-			modPresetAttributions.choices = AssetListElement.PresetAttributions;
-			modPresetAttributions.value = AssetListElement.PresetAttributions[0];
+			// TYPE OF ATTRIBUTION (DROPDOWN)
+			modPresetAttributions.choices = AssetListPrefabElement.PresetAttributions;
+			modPresetAttributions.value = AssetListPrefabElement.PresetAttributions[0];
 			if (modPresetAttributionChangeEvent != null)
 				modPresetAttributions.UnregisterCallback(modPresetAttributionChangeEvent);
 			modPresetAttributionChangeEvent = (evt) =>
@@ -1367,7 +1410,8 @@ namespace CollabXR.ModPackager
 			};
 			modPresetAttributions.RegisterCallback(modPresetAttributionChangeEvent);
 
-			modAttributionField.value = projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].Attribution;
+			// ATTRIBUTION
+			modAttributionField.value = modMetadataRef.Attribution;
 			if (modAttributionFieldChangeEvent != null)
 				modAttributionField.UnregisterCallback(modAttributionFieldChangeEvent);
 			modAttributionFieldChangeEvent = (evt) =>
@@ -1376,7 +1420,7 @@ namespace CollabXR.ModPackager
 				{
 					modPresetAttributions.SetValueWithoutNotify(modPresetAttributions.choices[0]);
 				}
-				projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].Attribution = evt.newValue;
+				modMetadataRef.Attribution = evt.newValue;
 
 				projectDatabaseManager.SaveAssetBundle(assetbundle);
 			};
@@ -1395,8 +1439,7 @@ namespace CollabXR.ModPackager
 			};
 			modTargetUploadFolder.RegisterCallback(modTargetUploadFolderChangeEvent);
 
-			// Mod Version List
-
+			// VERSION LIST
 			modVersionList.bindItem = (element, index) => { };
 			foreach (IntegerField integerField in modVersionListChangeEvents.Keys)
 			{
@@ -1414,7 +1457,7 @@ namespace CollabXR.ModPackager
 				QueuedActions.Add(() =>
 				{
 					thisIntegerField.label = SupportedTargets[modVersionListTargetOrder[index]].Item2;
-					thisIntegerField.value = projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].BuildNumberMap[modVersionListTargetOrder[index].ToString()];
+					thisIntegerField.value = modMetadataRef.BuildNumberMap[modVersionListTargetOrder[index].ToString()];
 				});
 
 				projectDatabaseManager.SaveAssetBundle(assetbundle);
@@ -1426,7 +1469,7 @@ namespace CollabXR.ModPackager
 
 				EventCallback<ChangeEvent<int>> changeEventCallback = (evt) =>
 				{
-					projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].BuildNumberMap[modVersionListTargetOrder[index].ToString()] = evt.newValue;
+					modMetadataRef.BuildNumberMap[modVersionListTargetOrder[index].ToString()] = evt.newValue;
 
 					projectDatabaseManager.SaveAssetBundle(assetbundle);
 				};
@@ -1436,8 +1479,7 @@ namespace CollabXR.ModPackager
 				thisIntegerField.RegisterCallback(changeEventCallback);
 			};
 
-			// Mod Creator List
-
+			// CREATORS LIST
 			modCreatorList.bindItem = (element, index) => { };
 			modCreatorList.itemsAdded -= previousListAddedEvent;
 			modCreatorList.itemsRemoved -= previousListRemovedEvent;
@@ -1447,14 +1489,14 @@ namespace CollabXR.ModPackager
 			}
 			modCreatorListChangeEvents.Clear();
 			modCreatorList.Clear();
-			modCreatorList.itemsSource = projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].Creators.ToList();
+			modCreatorList.itemsSource = modMetadataRef.Creators.ToList();
 			modCreatorList.makeItem = () => new TextField();
 			modCreatorList.bindItem = (element, index) =>
 			{
 				TextField thisTextField = element as TextField;
 				QueuedActions.Add(() =>
 				{
-					thisTextField.value = projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].Creators[index];
+					thisTextField.value = modMetadataRef.Creators[index];
 				});
 
 				projectDatabaseManager.SaveAssetBundle(assetbundle);
@@ -1466,7 +1508,7 @@ namespace CollabXR.ModPackager
 
 				EventCallback<ChangeEvent<string>> changeEventCallback = (evt) =>
 				{
-					projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].Creators[index] = evt.newValue;
+					modMetadataRef.Creators[index] = evt.newValue;
 
 					projectDatabaseManager.SaveAssetBundle(assetbundle);
 				};
@@ -1479,9 +1521,9 @@ namespace CollabXR.ModPackager
 			{
 				foreach (int i in indices)
 				{
-					if (i >= projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].Creators.Count)
+					if (i >= modMetadataRef.Creators.Count)
 					{
-						projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].Creators.Add("");
+						modMetadataRef.Creators.Add("");
 
 						projectDatabaseManager.SaveAssetBundle(assetbundle);
 					}
@@ -1491,9 +1533,9 @@ namespace CollabXR.ModPackager
 			{
 				foreach (int i in indices)
 				{
-					if (i < projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].Creators.Count)
+					if (i < modMetadataRef.Creators.Count)
 					{
-						projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].Creators.RemoveAt(i);
+						modMetadataRef.Creators.RemoveAt(i);
 
 						projectDatabaseManager.SaveAssetBundle(assetbundle);
 					}
@@ -1502,10 +1544,10 @@ namespace CollabXR.ModPackager
 			modCreatorList.itemsAdded += previousListAddedEvent;
 			modCreatorList.itemsRemoved += previousListRemovedEvent;
 
-			// Mod UUID
+			// UUID
 			QueuedActions.Add(() =>
 			{
-				modConfigBox.Q<TextField>("mod-uuid-field").value = $"{projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].Uuid}";
+				modConfigBox.Q<TextField>("mod-uuid-field").value = $"{modMetadataRef.Uuid}";
 			});
 
 			actionsDone++;
@@ -1514,122 +1556,33 @@ namespace CollabXR.ModPackager
 				OnAssetBundleLoadProgress((int)Math.Floor((actionsDone / totalActions) * 100));
 			});
 
-			// Index all Assets for the UI
 
-			foreach (Guid assetUuid in projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].AssetMap.Keys)
+			///
+			/// STEP 4:
+			/// Populate Asset List UI with data from the project database
+			/// ----------------------------------------------------------------------------------
+
+			// iterate through all assets
+			foreach (Guid assetUuid in modMetadataRef.AssetMap.Keys)
 			{
 				QueuedActions.Add(() =>
 				{
-					string assetPath = projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].AssetMap[assetUuid];
-
-					var newListElement = new AssetListElement(
-						assetUuid,
-						assetPath,
-						projectDatabaseManager.ProjectDatabase.AssetbundleToExtraDataMap[assetbundle].ExtraAssetSettings[assetUuid.ToString()],
-						projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].PrefabMap.ContainsKey(assetUuid)
-							? projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].PrefabMap[assetUuid]
-							: null,
-						projectDatabaseManager.ProjectDatabase.AssetbundleToExtraDataMap[assetbundle].ExtraPrefabSettings.ContainsKey(assetUuid.ToString())
-							? projectDatabaseManager.ProjectDatabase.AssetbundleToExtraDataMap[assetbundle].ExtraPrefabSettings[assetUuid.ToString()]
-							: null
-					);
-
-					newListElement.OnExtraAssetSettingsChanged += (newExtraAssetSettings) =>
-					{
-						projectDatabaseManager.ProjectDatabase.AssetbundleToExtraDataMap[assetbundle].ExtraAssetSettings[assetUuid.ToString()] = newExtraAssetSettings;
-					};
-
-					newListElement.OnPrefabDataChanged += (newPrefabData) =>
-					{
-						if (newPrefabData != null)
-						{
-							if (projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].PrefabMap.ContainsKey(assetUuid))
-							{
-								projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].PrefabMap[assetUuid] = newPrefabData;
-							}
-							else
-							{
-								projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].PrefabMap.Add(assetUuid, newPrefabData);
-							}
-						}
-						else
-						{
-							projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].PrefabMap.Remove(assetUuid);
-						}
-					};
-
-					newListElement.OnExtraPrefabSettingsChanged += (newExtraPrefabSettings) =>
-					{
-						if (newExtraPrefabSettings != null)
-						{
-							if (projectDatabaseManager.ProjectDatabase.AssetbundleToExtraDataMap[assetbundle].ExtraPrefabSettings.ContainsKey(assetUuid.ToString()))
-							{
-								projectDatabaseManager.ProjectDatabase.AssetbundleToExtraDataMap[assetbundle].ExtraPrefabSettings[assetUuid.ToString()] = newExtraPrefabSettings;
-							}
-							else
-							{
-								projectDatabaseManager.ProjectDatabase.AssetbundleToExtraDataMap[assetbundle].ExtraPrefabSettings.Add(assetUuid.ToString(), newExtraPrefabSettings);
-							}
-						}
-						else
-						{
-							projectDatabaseManager.ProjectDatabase.AssetbundleToExtraDataMap[assetbundle].ExtraPrefabSettings.Remove(assetUuid.ToString());
-						}
-					};
-
-					string assetType = AssetDatabase.GetMainAssetTypeAtPath(assetPath).ToString();
-					assetTypeList.Add(assetType);
-
-					ModPrefab prefabData = projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].PrefabMap.ContainsKey(assetUuid)
-						? projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].PrefabMap[assetUuid]
-						: null;
-
-					EventCallback<ChangeEvent<string>> searchCallback = (ChangeEvent<string> changeEvent) =>
-					{
-						string newValue = changeEvent.newValue;
-						QueuedActions.Add(() =>
-						{
-							SetVisible(newListElement, AssetFilterCheck(newValue, GenerateAssetSearchIndex(assetPath, assetUuid, prefabData), assetFilterField.value, assetType));
-						});
-					};
-
-					assetSearchChangedCallbacks.Add(searchCallback);
-					assetSearchField.RegisterCallback(searchCallback);
-
-					EventCallback<ChangeEvent<int>> filterCallback = (ChangeEvent<int> changeEvent) =>
-					{
-						int newValue = changeEvent.newValue;
-						QueuedActions.Add(() =>
-						{
-							SetVisible(newListElement, AssetFilterCheck(assetSearchField.value, GenerateAssetSearchIndex(assetPath, assetUuid, prefabData), newValue, assetType));
-						});
-					};
-
-					assetFilterChangedCallbacks.Add(filterCallback);
-
-					EventCallback<ChangeEvent<string>> attributeCallback = (ChangeEvent<string> changeEvent) =>
-					{
-						string newValue = changeEvent.newValue;
-						TextField attributionField = newListElement.Q<TextField>("menu-object-attribution-field");
-						attributionField.value = newValue;
-					};
-
-					assetAttributionChangedCallback.Add(attributeCallback);
-					modAttributionField.RegisterCallback(attributeCallback);
-
-					assetsScrollview.Add(newListElement);
-
-					actionsDone++;
-					OnAssetBundleLoadProgress((int)Math.Floor((actionsDone / totalActions) * 100));
+					Logger.Info($"Reloading asset UI for {assetUuid} in asset bundle {assetbundle}");
+					ReloadAssetBundleModAssetUI(modMetadataRef, modExtraDataRef, assetUuid, ref actionsDone, totalActions);
 				});
 			}
 
+			///
+			/// STEP 5:
+			/// Finalize asset filter UI and update progress
+
 			QueuedActions.Add(() =>
 			{
+				// squash type list into unique types only
 				assetTypeList = assetTypeList.Distinct().ToList();
 
 				assetFilterField.choices = assetTypeList;
-				assetFilterField.value = IntPow(2, assetTypeList.Count) - 1;
+				assetFilterField.value = IntPow(2, assetTypeList.Count) - 1; // pow2 because bitmask
 				foreach (EventCallback<ChangeEvent<int>> callback in assetFilterChangedCallbacks)
 				{
 					assetFilterField.RegisterCallback(callback);
@@ -1637,6 +1590,211 @@ namespace CollabXR.ModPackager
 
 				OnAssetBundleLoadProgress(100);
 			});
+		}
+
+
+		/// <summary>
+		/// Reloads the UI for a single asset in the asset bundle, setting up its element in the scrollview and registering callbacks for changes.
+		/// </summary>
+		void ReloadAssetBundleModAssetUI(
+			ModMetadata modMetadataRef,
+			ModEditorData modExtraDataRef,
+			Guid assetUuid,
+			ref float actionsDone,
+			float totalActions)
+		{
+			///
+			/// STEP 4A:
+			/// Setup asset element UI
+			/// --------------------------------------------------------------------------------
+			
+			string assetPath = modMetadataRef.AssetMap[assetUuid];
+			ExtraAssetSettings extraAssetSettings = modExtraDataRef.ExtraAssetSettings[assetUuid.ToString()];
+
+			// pull all refs required to setup the asset list visual element
+			ModPrefab prefabData = modMetadataRef.PrefabMap.ContainsKey(assetUuid)
+				? modMetadataRef.PrefabMap[assetUuid]
+				: null;
+			ModScene sceneData = modMetadataRef.SceneMap.ContainsKey(assetUuid)
+				? modMetadataRef.SceneMap[assetUuid]
+				: null;			
+			ExtraPrefabSettings extraPrefabSettings = modExtraDataRef.ExtraPrefabSettings.ContainsKey(assetUuid.ToString())
+				? modExtraDataRef.ExtraPrefabSettings[assetUuid.ToString()]
+				: null;
+			ExtraSceneSettings extraSceneSettings = modExtraDataRef.ExtraSceneSettings.ContainsKey(assetUuid.ToString())
+				? modExtraDataRef.ExtraSceneSettings[assetUuid.ToString()]
+				: null;
+
+			bool isScene = IsAssetScene(assetPath);
+			Logger.Info($"Reloading asset UI for {assetUuid} in asset bundle {modMetadataRef.Uuid}. Asset path: {assetPath}. Is scene: {isScene}");
+
+			// create the asset list element
+			VisualElement newListElement = 
+			isScene
+			? new AssetListSceneElement(
+				assetUuid,
+				assetPath,
+				extraAssetSettings,
+				sceneData,
+				extraSceneSettings
+			) // inside AssetListSceneElement constructor is the UI setup
+			: new AssetListPrefabElement(
+				assetUuid,
+				assetPath,
+				extraAssetSettings,
+				prefabData,
+				extraPrefabSettings
+			); // inside AssetListPrefabElement constructor is the UI setup
+
+			///
+			/// STEP 4B:
+			/// Setup callbacks for asset element UI
+			/// --------------------------------------------------------------------------------
+
+			// basically does the same operation for both scenes and prefabs
+			if (isScene)
+			{
+				AssetListSceneElement newSceneListElement = newListElement as AssetListSceneElement;
+				newSceneListElement.OnExtraAssetSettingsChanged += (newExtraAssetSettings) =>
+				{
+					modExtraDataRef.ExtraAssetSettings[assetUuid.ToString()] = newExtraAssetSettings;
+				};
+				newSceneListElement.OnSceneDataChanged += (newSceneData) =>
+				{
+					if (newSceneData != null)
+					{
+						if (modMetadataRef.SceneMap.ContainsKey(assetUuid))
+						{
+							modMetadataRef.SceneMap[assetUuid] = newSceneData;
+						}
+						else
+						{
+							modMetadataRef.SceneMap.Add(assetUuid, newSceneData);
+						}
+					}
+					else
+					{
+						modMetadataRef.SceneMap.Remove(assetUuid);
+					}
+				};
+				newSceneListElement.OnExtraSceneSettingsChanged += (newExtraSceneSettings) =>
+				{
+					if (newExtraSceneSettings != null)
+					{
+						if (modExtraDataRef.ExtraSceneSettings.ContainsKey(assetUuid.ToString()))
+						{
+							modExtraDataRef.ExtraSceneSettings[assetUuid.ToString()] = newExtraSceneSettings;
+						}
+						else
+						{
+							modExtraDataRef.ExtraSceneSettings.Add(assetUuid.ToString(), newExtraSceneSettings);
+						}
+					}
+					else
+					{
+						modExtraDataRef.ExtraSceneSettings.Remove(assetUuid.ToString());
+					}
+				};
+			}
+			else
+			{
+				AssetListPrefabElement newPrefabListElement = newListElement as AssetListPrefabElement;
+				newPrefabListElement.OnExtraAssetSettingsChanged += (newExtraAssetSettings) =>
+				{
+					modExtraDataRef.ExtraAssetSettings[assetUuid.ToString()] = newExtraAssetSettings;
+				};
+				newPrefabListElement.OnPrefabDataChanged += (newPrefabData) =>
+				{
+					if (newPrefabData != null)
+					{
+						if (modMetadataRef.PrefabMap.ContainsKey(assetUuid))
+						{
+							modMetadataRef.PrefabMap[assetUuid] = newPrefabData;
+						}
+						else
+						{
+							modMetadataRef.PrefabMap.Add(assetUuid, newPrefabData);
+						}
+					}
+					else
+					{
+						modMetadataRef.PrefabMap.Remove(assetUuid);
+					}
+				};
+				newPrefabListElement.OnExtraPrefabSettingsChanged += (newExtraPrefabSettings) =>
+				{
+					if (newExtraPrefabSettings != null)
+					{
+						if (modExtraDataRef.ExtraPrefabSettings.ContainsKey(assetUuid.ToString()))
+						{
+							modExtraDataRef.ExtraPrefabSettings[assetUuid.ToString()] = newExtraPrefabSettings;
+						}
+						else
+						{
+							modExtraDataRef.ExtraPrefabSettings.Add(assetUuid.ToString(), newExtraPrefabSettings);
+						}
+					}
+					else
+					{
+						modExtraDataRef.ExtraPrefabSettings.Remove(assetUuid.ToString());
+					}
+				};
+			}
+			
+
+			///
+			/// STEP 4C:
+			/// Setup search, filter, and attribution callbacks for asset element UI
+			/// --------------------------------------------------------------------------------
+
+
+			/// TYPE LIST
+			string assetType = AssetDatabase.GetMainAssetTypeAtPath(assetPath).ToString();
+			assetTypeList.Add(assetType);
+
+			// SEARCH
+			EventCallback<ChangeEvent<string>> searchCallback = (ChangeEvent<string> changeEvent) =>
+			{
+				string newValue = changeEvent.newValue;
+				QueuedActions.Add(() =>
+				{
+					SetVisible(newListElement, AssetFilterCheck(newValue, GenerateAssetSearchIndex(assetPath, assetUuid, prefabData), assetFilterField.value, assetType));
+				});
+			};
+			assetSearchChangedCallbacks.Add(searchCallback);
+			assetSearchField.RegisterCallback(searchCallback);
+
+			// FILTER
+			EventCallback<ChangeEvent<int>> filterCallback = (ChangeEvent<int> changeEvent) =>
+			{
+				int newValue = changeEvent.newValue;
+				QueuedActions.Add(() =>
+				{
+					SetVisible(newListElement, AssetFilterCheck(assetSearchField.value, GenerateAssetSearchIndex(assetPath, assetUuid, prefabData), newValue, assetType));
+				});
+			};
+			assetFilterChangedCallbacks.Add(filterCallback);
+
+			// ATTRIBUTION
+			EventCallback<ChangeEvent<string>> attributeCallback = (ChangeEvent<string> changeEvent) =>
+			{
+				string newValue = changeEvent.newValue;
+				TextField attributionField = newListElement.Q<TextField>("menu-object-attribution-field");
+				attributionField.value = newValue;
+			};
+			assetAttributionChangedCallback.Add(attributeCallback);
+			modAttributionField.RegisterCallback(attributeCallback);
+
+
+			///
+			/// STEP 4D:
+			/// Add the asset element to the scrollview and update progress
+			/// --------------------------------------------------------------------------------
+
+
+			assetsScrollview.Add(newListElement);
+			actionsDone++;
+			OnAssetBundleLoadProgress((int)Math.Floor(actionsDone / totalActions * 100));
 		}
 
 		bool AssetFilterCheck(string query, string searchIndex, int mask, string assetType)
@@ -1858,6 +2016,11 @@ namespace CollabXR.ModPackager
 			buildTargetSelector.onTargetsUpdated += buildTargetSelectorAction;
 			buildButton.clicked += buildButtonAction;
 			buildPublishButton.clicked += buildPublishButtonAction;
+		}
+
+		private bool IsAssetScene(string assetPath)
+		{
+			return assetPath.EndsWith(".unity");
 		}
 	}
 }

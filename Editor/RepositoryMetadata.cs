@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
-using Newtonsoft.Json;
 
 namespace CollabXR.ModPackager
 {
@@ -43,7 +42,17 @@ namespace CollabXR.ModPackager
 			foreach (var url in Mods)
 			{
 				int delim = url.LastIndexOf('/');
-				rootFolderLookUp.Add(new(url[(delim + 1)..]), url[..(delim + 1)]);
+				if (!rootFolderLookUp.TryAdd(new(url[(delim + 1)..]), url[..(delim + 1)]))
+				{
+					Logger.Error("Found duplicate mod when loading repository metadata. Only one mod will be indexed.");
+				}
+			}
+
+			Mods = new string[rootFolderLookUp.Count];
+			int i = 0;
+			foreach (var mod in rootFolderLookUp.Keys)
+			{
+				Mods[i++] = rootFolderLookUp[mod] + mod;
 			}
 		}
 	}

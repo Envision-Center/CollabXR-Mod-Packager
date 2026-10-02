@@ -72,12 +72,12 @@
 
             <ui:Box style="flex-direction: row; align-items: center;">
                 <ui:TextField label="Attribution" parse-escape-sequences="true" display-tooltip-when-elided="true" name="mod-attribution-field" style="flex-grow: 1;" tooltip="Modify attribution for every object in bundle" />
-
                 <ui:DropdownField name="mod-preset-attributions" style="width: 80px; height: 20px" />
             </ui:Box>
 
 			<ui:Box style="flex-direction: row; align-items: center;">
-				<ui:TextField label="Create/Add to Folder" parse-escape-sequences="true" display-tooltip-when-elided="true" name="target-folder" style="flex-grow: 1;" tooltip="Leave blank to add without a container folder." placeholder-text="Folder/subfolder" hide-placeholder-on-focus="true" />
+				<ui:TextField label="Folder" name="target-folder" style="flex-grow: 1;" parse-escape-sequences="true" display-tooltip-when-elided="true" tooltip="Leave blank to add without a container folder." />
+				<ui:DropdownField name="preset-folders" style="width: 80px; height: 20px" />
 			</ui:Box>
 
             <ui:ListView virtualization-method="DynamicHeight" reorder-mode="Animated" show-add-remove-footer="false" show-bound-collection-size="false" show-border="true" show-foldout-header="true" header-title="Versions" name="mod-versions-list" />

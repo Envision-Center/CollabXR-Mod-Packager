@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using FuzzySharp;
@@ -1109,7 +1110,9 @@ namespace CollabXR.ModPackager
 		DropdownField modPresetAttributions;
 		EventCallback<ChangeEvent<string>> modPresetAttributionChangeEvent;
 		TextField modTargetUploadFolder;
-		EventCallback<ChangeEvent<string>> modTargetUploadFolderChangeEvent;
+		EventCallback<ChangeEvent<string>> modUploadFolderChangeEvent;
+		DropdownField modPresetFolders;
+		EventCallback<ChangeEvent<string>> modPresetFolderChangeEvent;
 		ListView modVersionList;
 		List<BuildTarget> modVersionListTargetOrder = new();
 		Dictionary<IntegerField, EventCallback<ChangeEvent<int>>> modVersionListChangeEvents = new();
@@ -1258,6 +1261,7 @@ namespace CollabXR.ModPackager
 			modAttributionField = modConfigBox.Q<TextField>("mod-attribution-field");
 			modPresetAttributions = modConfigBox.Q<DropdownField>("mod-preset-attributions");
 			modTargetUploadFolder = modConfigBox.Q<TextField>("target-folder");
+			modPresetFolders = modConfigBox.Q<DropdownField>("preset-folders");
 			modVersionList = modConfigBox.Q<ListView>("mod-versions-list");
 			modCreatorList = modConfigBox.Q<ListView>("mod-creators-list");
 
@@ -1398,21 +1402,50 @@ namespace CollabXR.ModPackager
 
 			// Target upload folder
 
-			modTargetUploadFolder.value = projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].FolderPath;
-			if (modTargetUploadFolderChangeEvent != null)
-				modTargetUploadFolder.UnregisterCallback(modTargetUploadFolderChangeEvent);
-			modTargetUploadFolderChangeEvent = (evt) =>
+			modTargetUploadFolder.value = modPresetFolders.value = projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle].FolderPath;
+
+			// List all folder used in the bucket and list them as options
+			var folders = repositoryManager.repositoryMetadata.rootFolderLookUp.Values.ToList();
+			HashSet<string> creationOptions = new();
+			foreach (var folder in folders)
+			{
+				var subFolders = folder.Split('/');
+				var path = "";
+				for (int i = 0; i < subFolders.Length; i++)
+				{
+					path += subFolders[i] + "/";
+					creationOptions.Add(path + "-- Upload here --");
+				}
+			}
+			modPresetFolders.choices = creationOptions.ToList();
+
+			if (modPresetFolderChangeEvent != null)
+			{
+				modPresetFolders.UnregisterCallback(modPresetFolderChangeEvent);
+			}
+			modPresetFolderChangeEvent = (evt) =>
+			{
+				modPresetFolders.SetValueWithoutNotify(Regex.Replace(evt.newValue, @"-- Upload here --(?!.*-- Upload here --)", ""));
+
+				modTargetUploadFolder.value = modPresetFolders.value;
+			};
+			modPresetFolders.RegisterCallback(modPresetFolderChangeEvent);
+
+			if (modUploadFolderChangeEvent != null)
+			{
+				modTargetUploadFolder.UnregisterCallback(modUploadFolderChangeEvent);
+			}
+			modUploadFolderChangeEvent = (evt) =>
 			{
 				var modMetadata = projectDatabaseManager.ProjectDatabase.AssetbundleToModMap[assetbundle];
 				if (repositoryManager.repositoryMetadata.rootFolderLookUp.TryGetValue(modMetadata.Uuid, out var root) && !root.Equals(evt.newValue))
 				{
-					SetWarningMessage("A mod with duplicate UUID already exists in the bucket. Uploading to the new location will delete the existing one.");
+					SetWarningMessage("A mod with duplicate UUID already exists in the bucket in a different folder. Uploading to the new location will delete the existing one.");
 				}
 				modMetadata.FolderPath = evt.newValue;
-
 				projectDatabaseManager.SaveAssetBundle(assetbundle);
 			};
-			modTargetUploadFolder.RegisterCallback(modTargetUploadFolderChangeEvent);
+			modTargetUploadFolder.RegisterCallback(modUploadFolderChangeEvent);
 
 			// Mod Version List
 

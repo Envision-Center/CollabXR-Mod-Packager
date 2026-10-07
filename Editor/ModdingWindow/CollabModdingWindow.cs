@@ -139,6 +139,13 @@ namespace CollabXR.ModPackager
 			Logger.VerboseInfo($"Building{(publish ? " and Publishing" : "")} Mod for {string.Join(", ", targets.Select(target => target.ToString()))}");
 
 			AssetDatabase.Refresh();
+			string incompatibleAssetsError = GetMixedAssetBundleError(targetAssetBundle);
+			if (incompatibleAssetsError != null)
+			{
+				Logger.Error(incompatibleAssetsError);
+				ReloadAssetBundleUI(targetAssetBundle);
+				return;
+			}
 
 			Logger.VerboseInfo("Incrementing Build Numbers...");
 
@@ -1111,6 +1118,8 @@ namespace CollabXR.ModPackager
 		List<EventCallback<ChangeEvent<string>>> assetAttributionChangedCallback = new(); // used to update all obj attribution in bundle
 
 		ScrollView assetsScrollview;
+		ScrollView mixedAssetBundleErrorContainer;
+		HelpBox mixedAssetBundleError;
 
 		TextField modNameField;
 		EventCallback<ChangeEvent<string>> modNameFieldChangeEvent;
@@ -1272,6 +1281,8 @@ namespace CollabXR.ModPackager
 			assetSearchField = UIRootVisualElement.Q<ToolbarSearchField>("asset-search");
 			assetFilterField = UIRootVisualElement.Q<MaskField>("asset-filter");
 			assetsScrollview = UIRootVisualElement.Q<ScrollView>("assets-scrollview");
+			mixedAssetBundleErrorContainer = UIRootVisualElement.Q<ScrollView>("mixed-assetbundle-error-container");
+			mixedAssetBundleError = UIRootVisualElement.Q<HelpBox>("mixed-assetbundle-error");
 
 			buildSelectorButton = UIRootVisualElement.Q<CustomPopupButton>("build-selector");
 			buildButton = UIRootVisualElement.Q<Button>("build");
@@ -1317,6 +1328,8 @@ namespace CollabXR.ModPackager
 			{
 				QueuedActions.Add(() =>
 				{
+					mixedAssetBundleError.text = "";
+					SetVisible(mixedAssetBundleErrorContainer, false);
 					assetFilterField.value = 0;
 					assetFilterField.choices = new List<string> { };
 
@@ -1342,17 +1355,19 @@ namespace CollabXR.ModPackager
 			}
 			else
 			{
+				string incompatibleAssetsError = GetMixedAssetBundleError(assetbundle);
 				QueuedActions.Add(() =>
 				{
+					mixedAssetBundleError.text = incompatibleAssetsError ?? "";
+					SetVisible(mixedAssetBundleErrorContainer, incompatibleAssetsError != null);
 					assetSearchField.SetEnabled(true);
 					assetFilterField.SetEnabled(true);
 
 					buildSelectorButton.SetEnabled(true);
-					buildButton.SetEnabled(true && buildTargetSelector.IsAtLeastOneSelected());
+					buildButtonValidInContext = incompatibleAssetsError == null;
+					buildButton.SetEnabled(buildButtonValidInContext && buildTargetSelector.IsAtLeastOneSelected());
 					buildPublishSelectorButton.SetEnabled(true);
-					buildPublishButton.SetEnabled(true && buildTargetSelector.IsAtLeastOneSelected());
-
-					buildButtonValidInContext = true;
+					buildPublishButton.SetEnabled(buildButtonValidInContext && buildTargetSelector.IsAtLeastOneSelected());
 
 					SetVisible(modConfigBox, true);
 				});
@@ -1624,6 +1639,8 @@ namespace CollabXR.ModPackager
 			ExtraSceneSettings extraSceneSettings = modExtraDataRef.ExtraSceneSettings.ContainsKey(assetUuid.ToString())
 				? modExtraDataRef.ExtraSceneSettings[assetUuid.ToString()]
 				: null;
+			
+			// AssetDatabase.GetAssetPathsFromAssetBundle
 
 			bool isScene = IsAssetScene(assetPath);
 			Logger.Info($"Reloading asset UI for {assetUuid} in asset bundle {modMetadataRef.Uuid}. Asset path: {assetPath}. Is scene: {isScene}");
@@ -2021,6 +2038,38 @@ namespace CollabXR.ModPackager
 		private bool IsAssetScene(string assetPath)
 		{
 			return assetPath.EndsWith(".unity");
+		}
+
+		/// <summary>
+		/// Checks if the specified asset bundle contains both scenes and other types of assets, which is not allowed.
+		/// </summary>
+		/// <param name="assetbundle">The name of the asset bundle to check.</param>
+		/// <returns>An error message if the asset bundle contains both scenes and other assets; otherwise, null.</returns>
+		/// <details>
+		/// How it works:
+		/// 1. Pull all asset paths from asset bundle.
+		/// 2. Sort them into scenes VS not scenes.
+		/// 3. If both the sceneArray and the assetArray aren't empty, we have an invalid mixed bundle.
+		/// </details>
+		private string GetMixedAssetBundleError(string assetbundle)
+		{
+			if (string.IsNullOrEmpty(assetbundle))
+				return null;
+
+			string[] assetPaths = AssetDatabase.GetAssetPathsFromAssetBundle(assetbundle);
+			
+			string[] scenes = assetPaths.Where(
+				path => AssetDatabase.GetMainAssetTypeAtPath(path) == typeof(SceneAsset)
+			).OrderBy(path => path, StringComparer.Ordinal).ToArray();
+			string[] otherAssets = assetPaths.Where(
+				path => AssetDatabase.GetMainAssetTypeAtPath(path) != typeof(SceneAsset)
+			).OrderBy(path => path, StringComparer.Ordinal).ToArray();
+
+			if (scenes.Length == 0 || otherAssets.Length == 0)
+				return null;
+
+			return $"AssetBundle '{assetbundle}' contains scenes and other assets. Move them into separate bundles before building.\n" +
+				$"Scenes:\n- {string.Join("\n- ", scenes)}\nOther assets:\n- {string.Join("\n- ", otherAssets)}";
 		}
 	}
 }

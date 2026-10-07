@@ -63,6 +63,9 @@
             <ui:Button style="flex-grow: 0; flex-shrink: 0;" text="Reload AssetBundle" name="target-assetbundle-reload-button"/>
             <ui:ProgressBar style="min-width: 150px;" title="Reloading..." value="100" name="assetbundle-reload-progress-bar"/>
         </ui:Box>
+		<ui:ScrollView name="mixed-assetbundle-error-container" style="display: none; flex-shrink: 0; max-height: 160px;">
+			<ui:HelpBox name="mixed-assetbundle-error" message-type="Error" text="" />
+		</ui:ScrollView>
 
         <ui:Box style="flex-grow: 0; flex-shrink: 0; flex-direction: column; padding-top: 12px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;" name="mod-config-box">
             <ui:Label style="margin-bottom: 8px;" tabindex="-1" text="Mod Metadata:" parse-escape-sequences="true" display-tooltip-when-elided="true" />

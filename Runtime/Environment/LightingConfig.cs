@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 using UnityEditor;
 #endif
 
-namespace CollabXR.EnvironmentExtras
+namespace CollabXR.ModPackager.EnvironmentExtras
 {
 	[CreateAssetMenu(fileName = "Lighting Config", menuName = "CollabXR/Lighting Config")]
 	public class LightingConfig : ScriptableObject

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-namespace CollabXR.EnvironmentExtras
+namespace CollabXR.ModPackager.EnvironmentExtras
 {
 	[CreateAssetMenu(menuName = "CollabXR/Environment Data")]
 	public class EnvironmentData : ScriptableObject

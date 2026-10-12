@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace CollabXR.EnvironmentExtras
+namespace CollabXR.ModPackager.EnvironmentExtras
 {
 	[ExecuteInEditMode]
 	public class LightingConfigActivator : MonoBehaviour

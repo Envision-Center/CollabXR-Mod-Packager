@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace CollabXR.EnvironmentExtras
+namespace CollabXR.ModPackager.EnvironmentExtras
 {
 	public class EnvironmentPassthroughEvents : MonoBehaviour
 	{

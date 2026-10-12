@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace CollabXR.EnvironmentExtras
+namespace CollabXR.ModPackager.EnvironmentExtras
 {
 	[RequireComponent(typeof(EnvironmentPassthroughEvents))]
 	public class EnvironmentScene : MonoBehaviour

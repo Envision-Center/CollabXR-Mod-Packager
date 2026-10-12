@@ -73,22 +73,23 @@ namespace CollabXR.ModPackager
 		}
 
 		/// <summary>
-		/// Preprocesses the mod metadata for a given target platform, generating thumbnails for prefabs if needed.
+		/// Preprocesses the mod metadata with scene teleports and thumbnails for the build.
 		/// </summary>
 		/// <param name="target">The name of the target asset bundle.</param>
 		/// <param name="metadata">The mod metadata to preprocess.</param>
+		/// <param name="sceneTeleports">Teleport names extracted from the scenes in this build.</param>
 		/// <returns>The preprocessed mod metadata.</returns>
-		/// <details>
-		/// Currently only generates thumbnails for prefabs that have the "AutoGenerate" flag set in the extra prefab settings for the target platform.
-		/// Besides thumbnail stuff, this function is a no-op and just returns a copy of the metadata.
-		/// </details>
-		ModMetadata PreprocessMetadata(string target, ModMetadata metadata)
+		ModMetadata PreprocessMetadata(string target, ModMetadata metadata, Dictionary<Guid, List<string>> sceneTeleports)
 		{
 			Logger.VerboseInfo($"Preprocessing Mod Metadata for {target}...");
 
 			string metadataString = JsonConvert.SerializeObject(metadata, Formatting.None, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
 
 			ModMetadata metadataCopy = JsonConvert.DeserializeObject<ModMetadata>(metadataString);
+			foreach (KeyValuePair<Guid, List<string>> sceneTeleport in sceneTeleports)
+			{
+				metadataCopy.SceneMap[sceneTeleport.Key].teleports = new List<string>(sceneTeleport.Value);
+			}
 
 			ModEditorData extraData = projectDatabaseManager.TryGetModEditorData(target);
 			if (extraData != null)
@@ -147,6 +148,17 @@ namespace CollabXR.ModPackager
 				return;
 			}
 
+			Dictionary<Guid, List<string>> sceneTeleports;
+			try
+			{
+				sceneTeleports = SceneTeleportMetadataExtractor.Extract(projectDatabaseManager.TryGetModMetadata(targetAssetBundle));
+			}
+			catch (Exception e)
+			{
+				Logger.Error($"Cannot build mod: {e.Message}");
+				return;
+			}
+
 			Logger.VerboseInfo("Incrementing Build Numbers...");
 
 			foreach (BuildTarget target in targets)
@@ -177,7 +189,7 @@ namespace CollabXR.ModPackager
 
 						ModCompiler.CompileMod(
 							targetAssetBundle,
-							PreprocessMetadata(targetAssetBundle, projectDatabaseManager.TryGetModMetadata(targetAssetBundle)),
+							PreprocessMetadata(targetAssetBundle, projectDatabaseManager.TryGetModMetadata(targetAssetBundle), sceneTeleports),
 							target
 						);
 

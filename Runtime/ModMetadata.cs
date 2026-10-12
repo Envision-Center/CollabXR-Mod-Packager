@@ -56,27 +56,12 @@ namespace CollabXR.ModPackager
 		public string Attribution = "";
 		
 		/// <summary>
-		/// Name -> Global Scene Position mapping for teleportation points. 
+		/// names of tp locations, same index order as EnvironmentScene
 		/// </summary>
-		public Dictionary<string, Vector3> teleports = new Dictionary<string, Vector3>();
+		public List<string> teleports = new List<string>();
 
 		[JsonConverter(typeof(Texture2DConverter))]
 		public Texture2D Thumbnail = null;
-
-		public string AddBlankTeleport()
-		{
-			string newTeleportName = "New Teleport";
-			int counter = 1;
-			while (teleports.ContainsKey(newTeleportName))
-			{
-				newTeleportName = $"New Teleport {counter}";
-				counter++;
-			}
-
-			teleports.Add(newTeleportName, Vector3.zero);
-
-			return newTeleportName;
-		}
 	}
 
 	public class Texture2DConverter : JsonConverter<Texture2D>

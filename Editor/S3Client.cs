@@ -85,7 +85,7 @@ namespace CollabXR.ModPackager
 		/// </summary>
 		/// <param name="existingFolder">the current location of the mod on s3, null if does not exists</param>
 		/// <returns></returns>
-		public async Task<bool> UploadModAsync(Guid modUuid, string uploadFolder, BuildTarget target, Action<int> progressCallback, string existingFolder)
+		public async Task<bool> UploadModAsync(Guid modUuid, string uploadFolder, BuildTarget target, Action<int> progressCallback)
 		{
 			Logger.VerboseInfo($"Uploading {modUuid} for {target} to S3...");
 
@@ -139,24 +139,6 @@ namespace CollabXR.ModPackager
 			if (succeeded)
 			{
 				Logger.VerboseInfo($"Successfully uploaded all files for {modUuid} for {target} to S3.");
-
-				// If an older version of mod exists on a different location, delete the older mod
-				if (existingFolder != null & existingFolder != uploadFolder)
-				{
-					Logger.VerboseInfo($"Mod {modUuid} marked dirty, deleting existing entries");
-					bool success = await DeleteModAsync(
-						modUuid,
-						existingFolder,
-						(progress) =>
-						{
-							if (progress == -2)
-							{
-								progressCallback?.Invoke(-2);
-								return;
-							}
-						}
-					);
-				}
 			}
 			else
 			{
@@ -210,7 +192,10 @@ namespace CollabXR.ModPackager
 			return true;
 		}
 
-		// This deletes a mod and it's corresponding metadata from S3
+		/// <summary>
+		/// This deletes a mod and it's corresponding metadata from S3. Keep in mind that this will not error
+		/// or log warnings if target mod does not exist.
+		/// </summary>
 		public async Task<bool> DeleteModAsync(Guid modUuid, string folderPath, Action<int> progressCallback)
 		{
 			// the total number of objects is the number of supported platforms, plus the metadata file

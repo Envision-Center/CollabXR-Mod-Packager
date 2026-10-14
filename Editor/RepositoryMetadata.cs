@@ -44,7 +44,7 @@ namespace CollabXR.ModPackager
 				int delim = url.LastIndexOf('/');
 				if (!rootFolderLookUp.TryAdd(new(url[(delim + 1)..]), url[..(delim + 1)]))
 				{
-					Logger.Error("Found duplicate mod when loading repository metadata. Only one mod will be indexed.");
+					Logger.Error($"Found duplicate mod {url} when loading repository metadata. Only one mod will be indexed.");
 				}
 			}
 

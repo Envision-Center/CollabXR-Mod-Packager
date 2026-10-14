@@ -143,6 +143,9 @@ namespace CollabXR.ModPackager
 
 						(ModMetadata, BuildTarget, int) nextUpload = pendingUploads[0];
 
+						// Check if mod already exists in a folder on s3. This will be used to delete an existing mod if
+						// we are uploading to a different folder.
+						repositoryMetadata.rootFolderLookUp.TryGetValue(nextUpload.Item1.Uuid, out var existingFolder);
 
 						_ = await s3Client.UploadModAsync(
 							nextUpload.Item1.Uuid,
@@ -153,7 +156,8 @@ namespace CollabXR.ModPackager
 								nextUpload.Item3 = progress;
 								pendingUploads[0] = nextUpload;
 								OnUploadQueueUpdate?.Invoke(pendingUploads);
-							}
+							},
+							existingFolder
 						);
 
 						pendingUploads.RemoveAt(0);
@@ -217,7 +221,7 @@ namespace CollabXR.ModPackager
 			OnUploadQueueUpdate?.Invoke(pendingUploads);
 		}
 
-		public void DeleteMod(Guid modUuid)
+		public void DeleteMod(Guid modUuid, string folderPath = "")
 		{
 			Logger.VerboseInfo($"Deleting Mod {modUuid}...");
 
@@ -227,6 +231,7 @@ namespace CollabXR.ModPackager
 
 				bool success = await s3Client.DeleteModAsync(
 					modUuid,
+					folderPath,
 					(progress) =>
 					{
 						OnDeleteProgress?.Invoke(modUuid, progress);

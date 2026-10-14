@@ -528,7 +528,7 @@ namespace CollabXR.ModPackager
 				SetVisible(buildBox, true);
 				SetVisible(buildPublishBox, false);
 
-				SetWarningMessage("");
+				SetWarningMessage("", false);
 
 				UIRootVisualElement.MarkDirtyRepaint();
 			});
@@ -773,6 +773,7 @@ namespace CollabXR.ModPackager
 			{
 				string searchIndex = GenerateModSearchIndex(modData.Item1);
 				Guid deleteUuid = modData.Item1.Uuid;
+				string modPath = modData.Item1.FolderPath;
 
 				QueuedActions.Add(() =>
 				{
@@ -780,7 +781,7 @@ namespace CollabXR.ModPackager
 
 					newListElementRendered.onDelete += () =>
 					{
-						repositoryManager.DeleteMod(deleteUuid);
+						repositoryManager.DeleteMod(deleteUuid, modPath);
 					};
 
 					ModPackagerRepositoryManager.OnDeleteProgressEvent deleteProgressEvent = (mod, progress) =>
@@ -1441,6 +1442,10 @@ namespace CollabXR.ModPackager
 				if (repositoryManager.repositoryMetadata.rootFolderLookUp.TryGetValue(modMetadata.Uuid, out var root) && !root.Equals(evt.newValue))
 				{
 					SetWarningMessage("A mod with duplicate UUID already exists in the bucket in a different folder. Uploading to the new location will delete the existing one.");
+				}
+				else
+				{
+					SetWarningMessage("", false);
 				}
 				modMetadata.FolderPath = evt.newValue;
 				projectDatabaseManager.SaveAssetBundle(assetbundle);

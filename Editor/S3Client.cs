@@ -80,11 +80,16 @@ namespace CollabXR.ModPackager
 			}
 		}
 
-		// This uploads a mod file and metadata set present in the build directory to S3
+		/// <summary>
+		/// This uploads a mod file and metadata set present in the build directory to S3
+		/// </summary>
+		/// <param name="existingFolder">the current location of the mod on s3, null if does not exists</param>
+		/// <returns></returns>
 		public async Task<bool> UploadModAsync(Guid modUuid, string uploadFolder, BuildTarget target, Action<int> progressCallback)
 		{
 			Logger.VerboseInfo($"Uploading {modUuid} for {target} to S3...");
 
+			// Sanitize the upload destination
 			if (!string.IsNullOrEmpty(uploadFolder))
 			{
 				uploadFolder = uploadFolder.TrimEnd('/') + '/';
@@ -187,8 +192,11 @@ namespace CollabXR.ModPackager
 			return true;
 		}
 
-		// This deletes a mod and it's corresponding metadata from S3
-		public async Task<bool> DeleteModAsync(Guid modUuid, Action<int> progressCallback)
+		/// <summary>
+		/// This deletes a mod and it's corresponding metadata from S3. Keep in mind that this will not error
+		/// or log warnings if target mod does not exist.
+		/// </summary>
+		public async Task<bool> DeleteModAsync(Guid modUuid, string folderPath, Action<int> progressCallback)
 		{
 			// the total number of objects is the number of supported platforms, plus the metadata file
 			float totalObjects = CollabModdingWindow.SupportedTargets.Count + 1;
@@ -196,7 +204,7 @@ namespace CollabXR.ModPackager
 			float deletedObjects = 0;
 
 			// first request we make is the one for the metadata so it's delisted before we remove builds
-			DeleteObjectRequest request = new DeleteObjectRequest { BucketName = bucketName, Key = $"{modUuid}.meta.json" };
+			DeleteObjectRequest request = new DeleteObjectRequest { BucketName = bucketName, Key = $"{folderPath}{modUuid}.meta.json" };
 
 			DeleteObjectResponse response;
 
@@ -219,7 +227,7 @@ namespace CollabXR.ModPackager
 
 			foreach (BuildTarget target in CollabModdingWindow.SupportedTargets.Keys)
 			{
-				request = new DeleteObjectRequest { BucketName = bucketName, Key = $"{modUuid}.{target}" };
+				request = new DeleteObjectRequest { BucketName = bucketName, Key = $"{folderPath}{modUuid}.{target}" };
 
 				try
 				{

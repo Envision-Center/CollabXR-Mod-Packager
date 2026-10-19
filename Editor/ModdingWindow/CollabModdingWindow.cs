@@ -2123,7 +2123,9 @@ namespace CollabXR.ModPackager
 		private string GetMixedAssetBundleError(string assetbundle)
 		{
 			if (string.IsNullOrEmpty(assetbundle))
+			{
 				return null;
+			}
 
 			string[] assetPaths = AssetDatabase.GetAssetPathsFromAssetBundle(assetbundle);
 			
@@ -2135,7 +2137,9 @@ namespace CollabXR.ModPackager
 			).OrderBy(path => path, StringComparer.Ordinal).ToArray();
 
 			if (scenes.Length == 0 || otherAssets.Length == 0)
-				return null;
+			{
+				return null;	
+			}
 
 			return $"AssetBundle '{assetbundle}' contains scenes and other assets. Move them into separate bundles before building.\n" +
 				$"Scenes:\n- {string.Join("\n- ", scenes)}\nOther assets:\n- {string.Join("\n- ", otherAssets)}";

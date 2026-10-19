@@ -35,6 +35,11 @@ namespace CollabXR.ModPackager
 		/// ACCESSOR METHODS
 		/// 
 
+		/// <summary>
+		/// Tries to get the Mod Metadata associated with the given asset bundle name.
+		/// Returns null if the project database is not loaded, is corrupt, or if no metadata is found.
+		/// </summary>
+		/// <param name="assetBundleName">The name of the asset bundle to look up.</param>
 		public ModMetadata TryGetModMetadata(string assetBundleName)
 		{
 			if (ProjectDatabase == null || IsCorrupt)
@@ -47,6 +52,12 @@ namespace CollabXR.ModPackager
 
 			return null;
 		}
+		/// <summary>
+		/// Tries to get the Mod Editor Data associated with the given asset bundle name.
+		/// Returns null if the project database is not loaded, is corrupt, or if no editor data is found.
+		/// </summary>
+		/// <param name="assetBundleName">The name of the asset bundle to look up.</param>
+		/// <returns></returns>
 		public ModEditorData TryGetModEditorData(string assetBundleName)
 		{
 			if (ProjectDatabase == null || IsCorrupt)

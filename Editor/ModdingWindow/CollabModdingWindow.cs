@@ -79,12 +79,6 @@ namespace CollabXR.ModPackager
 			warningMsg.text = warning;
 		}
 
-		void SetWarningMessage(string warning, bool visible = true)
-		{
-			SetVisible(warningBox, visible);
-			warningMsg.text = warning;
-		}
-
 		/// <summary>
 		/// Preprocesses the mod metadata with scene teleports and thumbnails for the build.
 		/// </summary>

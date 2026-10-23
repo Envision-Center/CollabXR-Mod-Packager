@@ -11,9 +11,27 @@ namespace CollabXR.ModPackager.EnvironmentExtras
 	{
 		public string sceneName;
 
-		//public LightingConfig customLightingConfig;
+		[Tooltip("The path to the scene asset, auto-computed from the Scene Asset")]
+		public string scenePath;			
+#if UNITY_EDITOR
+		[Tooltip("Editor only, the scene asset for this environment")]
+		[SerializeField] SceneAsset sceneAsset;
+#endif
+
 		public EnvironmentTeleportInfo[] teleportInfo;
 		public EmbeddedNetworkObjects networkObjects;
+
+#if UNITY_EDITOR
+		private void OnValidate()
+		{
+			// auto-populates scenePath and sceneName from the editor-only Scene Asset
+			if (sceneAsset != null)
+			{
+				scenePath = AssetDatabase.GetAssetPath(sceneAsset);
+				sceneName = sceneAsset.name;
+			}
+		}
+#endif
 	}
 
 	[Serializable]

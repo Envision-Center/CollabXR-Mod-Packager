@@ -12,7 +12,9 @@ namespace CollabXR.ModPackager.EnvironmentExtras
 		public string sceneName;
 
 		[Tooltip("The path to the scene asset, auto-computed from the Scene Asset")]
-		public string scenePath;			
+		public string scenePath;
+		public string sceneGuid;
+
 #if UNITY_EDITOR
 		[Tooltip("Editor only, the scene asset for this environment")]
 		[SerializeField] SceneAsset sceneAsset;
@@ -29,6 +31,7 @@ namespace CollabXR.ModPackager.EnvironmentExtras
 			{
 				scenePath = AssetDatabase.GetAssetPath(sceneAsset);
 				sceneName = sceneAsset.name;
+				sceneGuid = AssetDatabase.AssetPathToGUID(scenePath);
 			}
 		}
 #endif

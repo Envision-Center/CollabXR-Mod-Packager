@@ -142,10 +142,10 @@ namespace CollabXR.ModPackager
 						Logger.VerboseInfo("Upload loop has an upload");
 
 						(ModMetadata, BuildTarget, int) nextUpload = pendingUploads[0];
+						var modUuid = nextUpload.Item1.Uuid;
 
-
-						_ = await s3Client.UploadModAsync(
-							nextUpload.Item1.Uuid,
+						bool success = await s3Client.UploadModAsync(
+							modUuid,
 							nextUpload.Item1.FolderPath,
 							nextUpload.Item2,
 							(progress) =>
@@ -155,6 +155,20 @@ namespace CollabXR.ModPackager
 								OnUploadQueueUpdate?.Invoke(pendingUploads);
 							}
 						);
+
+						// If the same mod already exists on a different folder prior to upload, delete the older mod to
+						// prevent duplicates.
+						repositoryMetadata.rootFolderLookUp.TryGetValue(nextUpload.Item1.Uuid, out var existingFolder);
+
+						if (success && existingFolder != null && existingFolder != nextUpload.Item1.FolderPath)
+						{
+							Logger.VerboseInfo($"Mod {nextUpload.Item1.Uuid} marked dirty, deleting existing entries");
+							success = await s3Client.DeleteModAsync(
+								nextUpload.Item1.Uuid,
+								existingFolder,
+								null
+							);
+						}
 
 						pendingUploads.RemoveAt(0);
 						OnUploadQueueUpdate?.Invoke(pendingUploads);
@@ -217,7 +231,7 @@ namespace CollabXR.ModPackager
 			OnUploadQueueUpdate?.Invoke(pendingUploads);
 		}
 
-		public void DeleteMod(Guid modUuid)
+		public void DeleteMod(Guid modUuid, string folderPath = "")
 		{
 			Logger.VerboseInfo($"Deleting Mod {modUuid}...");
 
@@ -227,6 +241,7 @@ namespace CollabXR.ModPackager
 
 				bool success = await s3Client.DeleteModAsync(
 					modUuid,
+					folderPath,
 					(progress) =>
 					{
 						OnDeleteProgress?.Invoke(modUuid, progress);

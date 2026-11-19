@@ -1,0 +1,37 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="AssetListPrefabElement.uss" /> 
+    <ui:Box style="flex-direction: column; flex-grow: 1; margin: 0px; border-top-width: 1px; border-top-color: #1A1A1A; background-color: transparent;">
+        <ui:Box style="flex-direction: row; flex-grow: 1; background-color: transparent;">
+            <ui:Image name="asset-preview" style="height: 72px; width: 72px; margin-top: 4px; margin-right: 4px; margin-bottom: 4px; margin-left: 4px; background-color: transparent;" />
+
+            <ui:Box style="flex-direction: column; height: 72px; justify-content: center; margin-top: 4px; margin-bottom: 4px; flex-grow: 1; margin-left: 4px; background-color: transparent;">
+                <ui:Label tabindex="-1" text="Label" parse-escape-sequences="true" display-tooltip-when-elided="true" name="asset-title" />
+
+                <ui:TextField label="UUID" parse-escape-sequences="true" display-tooltip-when-elided="true" name="asset-uuid" readonly="true" />
+                <ui:Toggle label="Menu Object" name="asset-menu-object" />
+            </ui:Box>
+        </ui:Box>
+
+        <ui:Box style="flex-direction: column; justify-content: center; margin-top: 4px; margin-bottom: 4px; flex-grow: 1; margin-left: 4px; background-color: transparent;" name="menu-object-settings">
+            <ui:TextField label="Category" parse-escape-sequences="true" display-tooltip-when-elided="true" name="menu-object-category" />
+            <ui:TextField label="Formatted Name" parse-escape-sequences="true" display-tooltip-when-elided="true" name="menu-object-formatted-name" />
+
+            <ui:Box style="flex-direction: row; align-items: center;">
+                <ui:TextField label="Attribution" parse-escape-sequences="true" display-tooltip-when-elided="true" name="menu-object-attribution-field" style="flex-grow: 1;" />
+        
+                <ui:DropdownField name="menu-object-preset-attributions" style="width: 80px; height: 20px" />
+            </ui:Box>
+
+            <ui:Vector3Field label="Minimum Scale" name="menu-object-min-scale"/>
+            <ui:Vector3Field label="Maximum Scale" name="menu-object-max-scale"/>
+            <ui:Vector3Field label="Starting Offset" name="menu-object-start-offset"/>
+
+            <ui:Label tabindex="-1" text="Thumbnail" parse-escape-sequences="true" display-tooltip-when-elided="true" style="margin: 3px; margin-top: 9px;" />
+            <ui:Toggle label="Auto Generate" name="menu-object-thumbnail-auto-generate" style="margin-bottom: 1px;" />
+            <uie:ObjectField type="UnityEngine.Texture2D, UnityEngine.CoreModule" label="Select" name="menu-object-thumbnail-select" />
+            <ui:HelpBox text='Your Thumbnail import settings are incorrect! Please use the "Default" Texture Type and enable Read/Write under the Advanced dropdown' parse-escape-sequences="true" message-type="Error" name="thumbnail-import-error">
+                <ui:Button style="flex-grow: 1; flex-shrink: 0;" text="Auto Fix" name="autofix-thumbnail-import"/>
+            </ui:HelpBox>
+        </ui:Box>
+    </ui:Box>
+</ui:UXML>

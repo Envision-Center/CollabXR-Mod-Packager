@@ -9,7 +9,7 @@ using UnityEngine.UIElements;
 namespace CollabXR.ModPackager
 {
 	[UxmlElement]
-	public partial class AssetListElement : VisualElement
+	public partial class AssetListSceneElement : VisualElement
 	{
 		public static readonly List<string> PresetAttributions = new() // list of commonly used attributions for ease of access
 		{
@@ -31,11 +31,9 @@ namespace CollabXR.ModPackager
 		private TextField menuObjectAttributionField;
 		private DropdownField menuObjectAttributionPreset;
 
-		private Vector3Field menuObjectMinScale;
-		private Vector3Field menuObjectMaxScale;
-		private Vector3Field menuObjectStartOffset;
+		// private ScrollView teleportScrollView;
+		// private Button newTeleportButton;
 
-		private Toggle menuObjectThumbnailAutoGenerate;
 		private ObjectField menuObjectThumbnailSelect;
 		private HelpBox thumbnailImportError;
 		private Button autoFixThumbnailImportButton;
@@ -67,16 +65,9 @@ namespace CollabXR.ModPackager
 				CollabModdingWindow.QueuedActions.Add(() =>
 				{
 					assetTitle.text = $"<b>{Path.GetFileName(assetPath)}</b> ({assetPath})";
-
-					UnityEngine.Object assetPrefab = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
-					Editor newEditor = Editor.CreateEditor(assetPrefab);
-					Texture2D previewTexture = newEditor.RenderStaticPreview(assetPath, null, 64, 64);
-					EditorWindow.DestroyImmediate(newEditor);
-
-					assetPreview.image = previewTexture;
-
-					UpdatePrefabUI();
-
+					assetPreview.image = extraSceneSettings?.Texture != null 
+						? extraSceneSettings.Texture 
+						: AssetPreview.GetAssetPreview(AssetDatabase.LoadAssetAtPath<SceneAsset>(assetPath));
 					MarkDirtyRepaint();
 				});
 			}
@@ -91,31 +82,31 @@ namespace CollabXR.ModPackager
 		public Action<ExtraAssetSettings> OnExtraAssetSettingsChanged;
 		private ExtraAssetSettings extraAssetSettings;
 
-		public ModPrefab PrefabData
+		public ModScene SceneData
 		{
-			get { return prefabData; }
+			get { return sceneData; }
 			set
 			{
-				prefabData = value;
+				sceneData = value;
 
-				UpdatePrefabUI();
+				UpdateSceneUI();
 			}
 		}
-		public Action<ModPrefab> OnPrefabDataChanged;
-		private ModPrefab prefabData;
+		public Action<ModScene> OnSceneDataChanged;
+		private ModScene sceneData;
 
-		public ExtraPrefabSettings ExtraPrefabSettings
+		public ExtraSceneSettings ExtraSceneSettings
 		{
-			get { return extraPrefabSettings; }
+			get { return extraSceneSettings; }
 			set
 			{
-				extraPrefabSettings = value;
+				extraSceneSettings = value;
 
-				UpdatePrefabUI();
+				UpdateSceneUI();
 			}
 		}
-		public Action<ExtraPrefabSettings> OnExtraPrefabSettingsChanged;
-		private ExtraPrefabSettings extraPrefabSettings;
+		public Action<ExtraSceneSettings> OnExtraSceneSettingsChanged;
+		private ExtraSceneSettings extraSceneSettings;
 
 		void SetVisible(VisualElement element, bool visible)
 		{
@@ -152,39 +143,32 @@ namespace CollabXR.ModPackager
 			importer.SaveAndReimport();
 		}
 
-		private void UpdatePrefabUI()
+		private void UpdateSceneUI()
 		{
 			CollabModdingWindow.QueuedActions.Add(() =>
 			{
-				if (AssetDatabase.GetMainAssetTypeAtPath(assetPath) == typeof(GameObject))
+				if (AssetDatabase.GetMainAssetTypeAtPath(assetPath) == typeof(SceneAsset))
 				{
-					bool isPrefab = prefabData != null && extraPrefabSettings != null;
+					bool isScene = sceneData != null && extraSceneSettings != null;
+					Logger.Info($"Updating scene UI for {assetPath}. Is scene: {isScene}");
 
 					SetVisible(menuObjectToggle, true);
-					menuObjectToggle.SetValueWithoutNotify(isPrefab);
+					menuObjectToggle.SetValueWithoutNotify(isScene);
 
-					SetVisible(menuObjectSettings, isPrefab);
+					SetVisible(menuObjectSettings, isScene);
 
-					if (isPrefab)
+					if (isScene)
 					{
-						menuObjectCategoryField.SetValueWithoutNotify(prefabData.Category);
-						menuObjectFormattedNameField.SetValueWithoutNotify(prefabData.FormattedName);
-						menuObjectAttributionField.SetValueWithoutNotify(prefabData.Attribution);
+						menuObjectCategoryField.SetValueWithoutNotify(sceneData.Category);
+						menuObjectFormattedNameField.SetValueWithoutNotify(sceneData.FormattedName);
+						menuObjectAttributionField.SetValueWithoutNotify(sceneData.Attribution);
 						menuObjectAttributionPreset.choices = PresetAttributions;
 						menuObjectAttributionPreset.SetValueWithoutNotify((menuObjectAttributionPreset.choices.Count > 0) ? menuObjectAttributionPreset.choices[0] : "");
-						menuObjectMinScale.SetValueWithoutNotify(prefabData.MinScale);
-						menuObjectMaxScale.SetValueWithoutNotify(prefabData.MaxScale);
-						menuObjectStartOffset.SetValueWithoutNotify(prefabData.StartingOffset);
 
-						SetVisible(menuObjectThumbnailSelect, !extraPrefabSettings.AutoGenerate);
-
-						menuObjectThumbnailAutoGenerate.SetValueWithoutNotify(extraPrefabSettings.AutoGenerate);
-						menuObjectThumbnailSelect.SetValueWithoutNotify(extraPrefabSettings.Texture);
-
-						if (extraPrefabSettings.Texture != null)
+						menuObjectThumbnailSelect.SetValueWithoutNotify(extraSceneSettings.Texture);
+						if (extraSceneSettings.Texture != null)
 						{
-							string texturePath = AssetDatabase.GetAssetPath(extraPrefabSettings.Texture);
-
+							string texturePath = AssetDatabase.GetAssetPath(extraSceneSettings.Texture);
 							SetVisible(thumbnailImportError, CheckIfThumbnailTextureNeedsCorrection(texturePath));
 						}
 						else
@@ -203,12 +187,12 @@ namespace CollabXR.ModPackager
 			});
 		}
 
-		public AssetListElement() { }
+		public AssetListSceneElement() { }
 
-		public AssetListElement(Guid newAssetUuid, string newAssetPath, ExtraAssetSettings newExtraAssetSettings, ModPrefab newPrefabData, ExtraPrefabSettings newExtraPrefabSettings)
+		public AssetListSceneElement(Guid newAssetUuid, string newAssetPath, ExtraAssetSettings newExtraAssetSettings, ModScene newSceneData, ExtraSceneSettings newExtraSceneSettings)
 		{
 			VisualTreeAsset visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(
-				$"Packages/{CollabModdingWindow.BundleID}/Editor/ModdingWindow/Components/AssetListElement/AssetListElement.uxml"
+				$"Packages/{CollabModdingWindow.BundleID}/Editor/ModdingWindow/Components/AssetListSceneElement/AssetListSceneElement.uxml"
 			);
 			visualTreeAsset.CloneTree(this);
 
@@ -217,8 +201,8 @@ namespace CollabXR.ModPackager
 			assetTitle = this.Q<Label>("asset-title");
 			assetUuidField = this.Q<TextField>("asset-uuid");
 			assetPreview = this.Q<Image>("asset-preview");
-
 			menuObjectToggle = this.Q<Toggle>("asset-menu-object");
+
 			menuObjectSettings = this.Q<Box>("menu-object-settings");
 
 			menuObjectCategoryField = this.Q<TextField>("menu-object-category");
@@ -227,11 +211,10 @@ namespace CollabXR.ModPackager
 			menuObjectAttributionField = this.Q<TextField>("menu-object-attribution-field");
 			menuObjectAttributionPreset = this.Q<DropdownField>("menu-object-preset-attributions");
 
-			menuObjectMinScale = this.Q<Vector3Field>("menu-object-min-scale");
-			menuObjectMaxScale = this.Q<Vector3Field>("menu-object-max-scale");
-			menuObjectStartOffset = this.Q<Vector3Field>("menu-object-start-offset");
+			// teleportScrollView = this.Q<ScrollView>("teleport-scroll-view");
 
-			menuObjectThumbnailAutoGenerate = this.Q<Toggle>("menu-object-thumbnail-auto-generate");
+			// newTeleportButton = this.Q<Button>("new-teleport-button");
+
 			menuObjectThumbnailSelect = this.Q<ObjectField>("menu-object-thumbnail-select");
 			thumbnailImportError = this.Q<HelpBox>("thumbnail-import-error");
 			autoFixThumbnailImportButton = this.Q<Button>("autofix-thumbnail-import");
@@ -241,51 +224,53 @@ namespace CollabXR.ModPackager
 
 			ExtraAssetSettings = newExtraAssetSettings;
 
-			PrefabData = newPrefabData;
-			ExtraPrefabSettings = newExtraPrefabSettings;
+			SceneData = newSceneData;
+			ExtraSceneSettings = newExtraSceneSettings;
+
+			Logger.Info($"AssetListSceneElement created for {assetPath} with UUID {assetUuid}. Is scene: {sceneData != null && extraSceneSettings != null}");
 
 			menuObjectToggle.RegisterCallback<ChangeEvent<bool>>(
 				(changeEvent) =>
 				{
-					bool updatedPrefabData = false;
-					bool updatedExtraPrefabSettings = false;
+					bool updatedSceneData = false;
+					bool updatedExtraSceneSettings = false;
 					if (changeEvent.newValue)
 					{
-						if (prefabData == null)
+						if (sceneData == null)
 						{
-							prefabData = new();
-							updatedPrefabData = true;
+							sceneData = new();
+							updatedSceneData = true;
 						}
 
-						if (extraPrefabSettings == null)
+						if (extraSceneSettings == null)
 						{
-							extraPrefabSettings = new();
-							updatedExtraPrefabSettings = true;
+							extraSceneSettings = new();
+							updatedExtraSceneSettings = true;
 						}
 					}
 					else
 					{
-						prefabData = null;
-						updatedPrefabData = true;
+						sceneData = null;
+						updatedSceneData = true;
 					}
 
-					UpdatePrefabUI();
+					UpdateSceneUI();
 
-					if (updatedPrefabData)
-						OnPrefabDataChanged?.Invoke(prefabData);
-					if (updatedExtraPrefabSettings)
-						OnExtraPrefabSettingsChanged?.Invoke(extraPrefabSettings);
+					if (updatedSceneData)
+						OnSceneDataChanged?.Invoke(sceneData);
+					if (updatedExtraSceneSettings)
+						OnExtraSceneSettingsChanged?.Invoke(extraSceneSettings);
 				}
 			);
 
 			menuObjectCategoryField.RegisterCallback<ChangeEvent<string>>(
 				(changeEvent) =>
 				{
-					if (prefabData != null)
+					if (sceneData != null)
 					{
-						prefabData.Category = changeEvent.newValue;
+						sceneData.Category = changeEvent.newValue;
 
-						OnPrefabDataChanged?.Invoke(prefabData);
+						OnSceneDataChanged?.Invoke(sceneData);
 					}
 				}
 			);
@@ -293,11 +278,11 @@ namespace CollabXR.ModPackager
 			menuObjectFormattedNameField.RegisterCallback<ChangeEvent<string>>(
 				(changeEvent) =>
 				{
-					if (prefabData != null)
+					if (sceneData != null)
 					{
-						prefabData.FormattedName = changeEvent.newValue;
+						sceneData.FormattedName = changeEvent.newValue;
 
-						OnPrefabDataChanged?.Invoke(prefabData);
+						OnSceneDataChanged?.Invoke(sceneData);
 					}
 				}
 			);
@@ -305,7 +290,7 @@ namespace CollabXR.ModPackager
 			menuObjectAttributionPreset.RegisterCallback<ChangeEvent<string>>(
 				(changeEvent) =>
 				{
-					if (prefabData != null && menuObjectAttributionField != null)
+					if (sceneData != null && menuObjectAttributionField != null)
 					{
 						if (changeEvent.newValue.Equals("Custom"))
 							return;
@@ -318,66 +303,16 @@ namespace CollabXR.ModPackager
 			menuObjectAttributionField.RegisterCallback<ChangeEvent<string>>(
 				(changeEvent) =>
 				{
-					if (prefabData != null)
+					if (sceneData != null)
 					{
 						if (!menuObjectAttributionPreset.choices.Contains(changeEvent.newValue) || changeEvent.newValue.Equals("Custom"))
 						{
 							menuObjectAttributionPreset.SetValueWithoutNotify((menuObjectAttributionPreset.choices.Count > 0) ? menuObjectAttributionPreset.choices[0] : "");
 						}
 
-						prefabData.Attribution = changeEvent.newValue;
+						sceneData.Attribution = changeEvent.newValue;
 
-						OnPrefabDataChanged?.Invoke(prefabData);
-					}
-				}
-			);
-
-			menuObjectMinScale.RegisterCallback<ChangeEvent<Vector3>>(
-				(changeEvent) =>
-				{
-					if (prefabData != null)
-					{
-						prefabData.MinScale = changeEvent.newValue;
-
-						OnPrefabDataChanged?.Invoke(prefabData);
-					}
-				}
-			);
-
-			menuObjectMaxScale.RegisterCallback<ChangeEvent<Vector3>>(
-				(changeEvent) =>
-				{
-					if (prefabData != null)
-					{
-						prefabData.MaxScale = changeEvent.newValue;
-
-						OnPrefabDataChanged?.Invoke(prefabData);
-					}
-				}
-			);
-
-			menuObjectStartOffset.RegisterCallback<ChangeEvent<Vector3>>(
-				(changeEvent) =>
-				{
-					if (prefabData != null)
-					{
-						prefabData.StartingOffset = changeEvent.newValue;
-
-						OnPrefabDataChanged?.Invoke(prefabData);
-					}
-				}
-			);
-
-			menuObjectThumbnailAutoGenerate.RegisterCallback<ChangeEvent<bool>>(
-				(ChangeEvent<bool> changeEvent) =>
-				{
-					if (extraPrefabSettings != null)
-					{
-						extraPrefabSettings.AutoGenerate = changeEvent.newValue;
-
-						UpdatePrefabUI();
-
-						OnExtraPrefabSettingsChanged?.Invoke(extraPrefabSettings);
+						OnSceneDataChanged?.Invoke(sceneData);
 					}
 				}
 			);
@@ -385,22 +320,22 @@ namespace CollabXR.ModPackager
 			menuObjectThumbnailSelect.RegisterCallback<ChangeEvent<UnityEngine.Object>>(
 				(changeEvent) =>
 				{
-					if (extraPrefabSettings != null)
+					if (extraSceneSettings != null)
 					{
-						extraPrefabSettings.Texture = (Texture2D)changeEvent.newValue;
+						extraSceneSettings.Texture = (Texture2D)changeEvent.newValue;
 
-						UpdatePrefabUI();
+						UpdateSceneUI();
 
-						OnExtraPrefabSettingsChanged?.Invoke(extraPrefabSettings);
+						OnExtraSceneSettingsChanged?.Invoke(extraSceneSettings);
 					}
 				}
 			);
 
 			autoFixThumbnailImportButton.clicked += () =>
 			{
-				if (extraPrefabSettings != null)
+				if (extraSceneSettings != null)
 				{
-					string texturePath = AssetDatabase.GetAssetPath(extraPrefabSettings.Texture);
+					string texturePath = AssetDatabase.GetAssetPath(extraSceneSettings.Texture);
 
 					CorrectThumbnailTexture(texturePath);
 
@@ -412,6 +347,8 @@ namespace CollabXR.ModPackager
 					});
 				}
 			};
+
+			
 		}
 	}
 }
